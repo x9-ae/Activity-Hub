@@ -52,10 +52,11 @@ def test_event_id_given_by_the_caller_is_kept():
 
 
 def test_access_row_reads_who_and_where_from_the_context():
-    context = {"actor_type": "staff", "actor_id": "12", "ip": "1.2.3.4", "request_id": "r1"}
+    context = {"actor_type": "staff", "actor_id": "12", "actor_name": "ann@x9.ae", "ip": "1.2.3.4", "request_id": "r1"}
     row = access_row(SOURCE, context, method="GET", route="/positions/{ticket}", path="/positions/5",
                      status=200, duration_ms=12)
-    assert (row["actor_id"], row["ip"], row["route"], row["status"]) == ("12", "1.2.3.4", "/positions/{ticket}", 200)
+    assert (row["actor_id"], row["actor_name"], row["ip"], row["route"], row["status"]) == (
+        "12", "ann@x9.ae", "1.2.3.4", "/positions/{ticket}", 200)
 
 
 def test_secrets_are_masked_at_any_depth():

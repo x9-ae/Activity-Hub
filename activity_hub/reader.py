@@ -86,6 +86,29 @@ class ActivityReader:
         )
         return [{"at": _timestamp(row[0]), "count": row[1]} for row in result.result_rows]
 
+    def count_by(self, kind: str, field: str, *, action: str | None = None, related: tuple | None = None,
+                 status_from: int | None = None, occurred_from=None, occurred_to=None, limit: int = 100,
+                 **filters) -> list:
+        """[{"value", "count"}] for one filter field, most frequent first, under the same criteria as the
+        searches; a filter on the field itself is left out, so every choice stays visible (a facet)."""
+        allowed = EVENT_FILTERS if kind == "events" else ACCESS_FILTERS
+        if field not in allowed:
+            raise ValueError(f"unknown field: {field}")
+        filters.pop(field, None)
+        if kind == "events":
+            table = EVENTS_TABLE
+            clauses, parameters = self._event_criteria(action, related, occurred_from, occurred_to, filters)
+        else:
+            table = ACCESS_TABLE
+            clauses, parameters = self._access_criteria(status_from, occurred_from, occurred_to, filters)
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        result = self._client.query(
+            f"SELECT {allowed[field][0]} AS value, count() AS n FROM {table} {where} "
+            f"GROUP BY value ORDER BY n DESC, value LIMIT {{limit:UInt32}}",
+            parameters={**parameters, "limit": max(1, min(int(limit), MAX_PAGE_SIZE))},
+        )
+        return [{"value": str(row[0]), "count": row[1]} for row in result.result_rows]
+
     def _event_criteria(self, action, related, occurred_from, occurred_to, filters: dict) -> tuple:
         clauses, parameters = self._filters(EVENT_FILTERS, filters, occurred_from, occurred_to)
         if action:

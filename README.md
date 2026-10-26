@@ -157,6 +157,7 @@ page = reader.search_events(cursor=page["next_cursor"])    # next page, same fil
 reader.timeline("account", "100234")                       # the account and everything related to it
 reader.search_access_logs(status_from=400, service="trading_service")
 reader.count_over_time("events", bucket_minutes=60, action="user.")   # [{at, count}] for a chart
+reader.count_by("requests", "service", status_from=500)   # [{value, count}], e.g. a service picker
 for chunk in reader.export_events_csv(tenant_id="3"):      # stream to a download
     ...
 ```

@@ -75,6 +75,17 @@ def test_counts_over_time_follow_the_same_criteria(reader):
 
 
 @needs_clickhouse
+def test_count_by_lists_each_value_without_its_own_filter(reader):
+    assert reader.count_by("events", "actor_id")[0] == {"value": "100234", "count": 7}
+    by_category = reader.count_by("events", "category", category="trade", actor_id="100234")
+    assert by_category == [{"value": "trade", "count": 7}], "the field's own filter is ignored, the others apply"
+    assert reader.count_by("requests", "route", status_from=400) == [{"value": "/y", "count": 1}]
+    assert reader.count_by("requests", "actor_id")[0]["count"] == 2
+    with pytest.raises(ValueError, match="unknown field"):
+        reader.count_by("requests", "password")
+
+
+@needs_clickhouse
 def test_csv_export_and_access_log_search(reader):
     rows = list(csv.reader(io.StringIO("".join(reader.export_events_csv(action="trade.")))))
     assert rows[0][0] == "id" and len(rows) == 8

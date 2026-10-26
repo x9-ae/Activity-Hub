@@ -16,7 +16,7 @@ EVENT_COLUMNS = (
 )
 ACCESS_COLUMNS = (
     "id", "occurred_at", "app", "environment", "service", "tenant_id",
-    "actor_type", "actor_id", "origin",
+    "actor_type", "actor_id", "actor_name", "origin",
     "method", "route", "path", "status", "duration_ms", "request_body",
     "ip", "country", "user_agent", "request_id", "session_id",
 )
@@ -138,6 +138,7 @@ def access_row(source: dict, context: dict, *, method: str, route: str, path: st
         "tenant_id": _text(context.get("tenant_id")),
         "actor_type": _text(context.get("actor_type")),
         "actor_id": _text(context.get("actor_id")),
+        "actor_name": _text(context.get("actor_name")),
         "origin": _text(context.get("origin")),
         "method": _text(method),
         "route": _text(route),

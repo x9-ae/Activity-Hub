@@ -49,7 +49,7 @@ def test_requests_carry_who_and_where_into_events_and_the_access_log(settings, t
                            "AND ip = '203.0.113.7' AND country = 'AE' AND origin = 'web' AND tenant_id = '3' "
                            "AND session_id = 's1' AND request_id = {rid:String}", rid=request_id) == 1
     assert count(settings, "SELECT count() FROM access_logs WHERE route = '/positions/{ticket}/close' "
-                           "AND path = '/positions/11450/close' AND status = 200 AND actor_id = '100234' "
+                           "AND path = '/positions/11450/close' AND status = 200 AND actor_id = '100234' AND actor_name = 'Ann' "
                            "AND request_id = {rid:String}", rid=request_id) == 1
     assert count(settings, "SELECT count() FROM access_logs") == 1, "health checks and skipped calls are not logged"
     hub.close()
