@@ -44,11 +44,14 @@ class ActivityHub:
             self._writer.put(EVENTS_TABLE, row)
         return row["id"]
 
-    def record_access(self, *, method: str, route: str, path: str, status: int, duration_ms: int) -> None:
-        """Records one API request; who and from where come from the current request."""
+    def record_access(self, *, method: str, route: str, path: str, status: int, duration_ms: int,
+                      request_body=None) -> None:
+        """Records one API request; who and from where come from the current request. request_body
+        (a change's JSON) is stored with its secrets masked."""
         if self._writer:
             self._writer.put(ACCESS_TABLE, access_row(self._source, current_context(), method=method, route=route,
-                                                      path=path, status=status, duration_ms=duration_ms))
+                                                      path=path, status=status, duration_ms=duration_ms,
+                                                      request_body=request_body))
 
     def flush(self, timeout: float = 10.0) -> bool:
         """Waits until everything recorded so far is written or spooled."""

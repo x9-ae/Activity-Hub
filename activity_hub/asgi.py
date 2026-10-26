@@ -1,3 +1,4 @@
+import json
 import time
 from activity_hub.context import _current, FORWARD_HEADERS
 from activity_hub.ids import uuid7
@@ -7,6 +8,10 @@ DEFAULT_SKIP_PATHS = ("/healthz", "/health", "/metrics", "/docs", "/redoc", "/op
 # Cloudflare sets this and overwrites any value the caller sent. X-Forwarded-For is not trusted by
 # default: its left-most entry is whatever the caller wrote. Behind another proxy, name its header.
 DEFAULT_IP_HEADERS = ("cf-connecting-ip",)
+# requests that change something: what they sent is kept, so every change is on record
+WRITE_METHODS = ("POST", "PUT", "PATCH", "DELETE")
+# well under the 64 KB a stored JSON field may take, whatever masking does to the length
+MAX_REQUEST_BODY_BYTES = 32 * 1024
 
 
 def route_template(scope) -> str:
@@ -19,10 +24,24 @@ def route_template(scope) -> str:
     return "/".join(f"{{{by_value[part]}}}" if part in by_value else part for part in scope["path"].split("/"))
 
 
+def _sent(body: dict):
+    """The JSON a request sent, or a note on why it is not kept."""
+    if body["size"] > MAX_REQUEST_BODY_BYTES:
+        return {"not_kept": f"body of {body['size']} bytes is over {MAX_REQUEST_BODY_BYTES}"}
+    if not body["size"]:
+        return None
+    try:
+        return json.loads(b"".join(body["chunks"]))
+    except ValueError:
+        return {"not_kept": "body is not valid JSON"}
+
+
 class ActivityMiddleware:
     """ASGI middleware (FastAPI, Starlette, any ASGI app). For every HTTP request it opens the
     activity context (IP, country, user agent, origin, request id), echoes X-Request-Id on the
-    response and records one access-log row once the response is sent.
+    response and records one access-log row once the response is sent. For a request that changes
+    something (POST, PUT, PATCH, DELETE) with a JSON body, the row also keeps what was sent, with
+    passwords, tokens and keys masked, so every change is recorded without code per feature.
 
     The application names the actor with set_actor() once it has authenticated the request.
 
@@ -55,6 +74,18 @@ class ActivityMiddleware:
         request_id = context["request_id"].encode("latin-1")
         status = {"code": 500}
         started = time.perf_counter()
+        keep_body = (log_access and scope["method"] in WRITE_METHODS
+                     and "json" in headers.get("content-type", ""))
+        body = {"chunks": [], "size": 0}
+
+        async def receive_and_keep():
+            message = await receive()
+            if keep_body and message["type"] == "http.request":
+                chunk = message.get("body", b"")
+                body["size"] += len(chunk)
+                if body["size"] <= MAX_REQUEST_BODY_BYTES:
+                    body["chunks"].append(chunk)
+            return message
 
         async def send_with_request_id(message):
             if message["type"] == "http.response.start":
@@ -64,7 +95,7 @@ class ActivityMiddleware:
             await send(message)
 
         try:
-            await self.app(scope, receive, send_with_request_id)
+            await self.app(scope, receive_and_keep if keep_body else receive, send_with_request_id)
         finally:
             try:
                 if log_access:
@@ -74,6 +105,7 @@ class ActivityMiddleware:
                         path=scope["path"],
                         status=status["code"],
                         duration_ms=round((time.perf_counter() - started) * 1000),
+                        request_body=_sent(body) if keep_body else None,
                     )
             except Exception:
                 logger.exception("activity hub: access row not recorded")

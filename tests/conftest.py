@@ -16,20 +16,19 @@ def settings():
         "database": f"hub_test_{uuid.uuid4().hex[:10]}",
         "user": os.environ["CLICKHOUSE_USER"],
         "password": os.environ["CLICKHOUSE_PASSWORD"],
-        "admin_user": os.environ["CLICKHOUSE_ADMIN_USER"],
-        "admin_password": os.environ["CLICKHOUSE_ADMIN_PASSWORD"],
     }
     prepare_database(values)
     yield values
-    admin = get_client(values, admin=True)
-    admin.command(f"DROP DATABASE IF EXISTS {values['database']}")
-    admin.close()
+    client = get_client(values)
+    client.command(f"DROP DATABASE IF EXISTS {values['database']}")
+    client.close()
 
 
 def admin_command(settings: dict, statement: str) -> None:
-    admin = get_client(settings, admin=True, database=settings["database"])
-    admin.command(statement, settings={"mutations_sync": 2})
-    admin.close()
+    """A change made behind the package's back, as someone with direct database access could."""
+    client = get_client(settings, database=settings["database"])
+    client.command(statement, settings={"mutations_sync": 2})
+    client.close()
 
 
 def count(settings: dict, sql: str, **parameters) -> int:

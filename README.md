@@ -13,7 +13,7 @@ behind the package's back.
 ## Install
 
 ```bash
-pip install "activity-hub @ https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.1.0.tar.gz"
+pip install "activity-hub @ https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.2.0.tar.gz"
 ```
 
 (The release archive needs no git on the machine installing it.)
@@ -26,10 +26,11 @@ The application passes a dict. Where it keeps the values is up to the applicatio
 
 | Key | Purpose |
 |---|---|
-| `host`, `port` | ClickHouse server, HTTP port (usually 8123) |
-| `database` | The Hub's database |
-| `user`, `password` | The Hub's own login. It is allowed `SELECT` and `INSERT` only, so neither the application nor anyone holding this login can change or remove a record. |
-| `admin_user`, `admin_password` | A ClickHouse admin login. Only `prepare_database` uses it. |
+| `host`, `port` | The application's ClickHouse server, HTTP port (usually 8123) |
+| `user`, `password` | The application's ClickHouse login |
+| `database` | The Hub's own database on that server, created if missing |
+
+The Hub needs no server or login of its own; it keeps its records in their own database.
 
 ## 1. Prepare the database
 
@@ -41,9 +42,12 @@ from activity_hub import prepare_database
 prepare_database(settings)
 ```
 
-It creates the database, the Hub's user and the tables, and applies new migrations. Migrations
-only ever add tables or columns, so an older version of the package keeps working on a newer
-schema.
+It creates the database and the tables, and applies new migrations. Migrations only ever add
+tables or columns, so an older version of the package keeps working on a newer schema.
+
+Optional: `create_append_only_user(settings, "hub_writer", password)` creates a login that may only
+read and add records in the Hub's database. An application that writes with it cannot change
+history even by mistake.
 
 ## 2. Record
 
@@ -99,9 +103,12 @@ For each request the middleware:
   (`X-Client-Origin`) and request id (`X-Request-Id`, created when missing and returned on the
   response);
 - makes them available to every `record_event` during the request;
-- writes one access-log row with the route template (`/positions/{ticket}`), status and duration.
+- writes one access-log row with the route template (`/positions/{ticket}`), status and duration;
+- for a request that changes something (POST, PUT, PATCH, DELETE) with a JSON body, also keeps what
+  was sent, with every password, token, secret or key masked at any depth. Every change is on
+  record this way, with no code per feature. Bodies over 32 KB are noted, not kept.
 
-Query strings and bodies are never stored, because they can carry passwords and tokens.
+Query strings, responses and non-JSON bodies are never stored.
 
 | Option | Use |
 |---|---|
@@ -169,6 +176,6 @@ pytest
 ```
 
 The database tests run when these variables point at a ClickHouse: `CLICKHOUSE_HOST`,
-`CLICKHOUSE_PORT`, `CLICKHOUSE_USER`, `CLICKHOUSE_PASSWORD`, `CLICKHOUSE_ADMIN_USER` and
-`CLICKHOUSE_ADMIN_PASSWORD`. Each test uses its own database. GitHub Actions runs them against
+`CLICKHOUSE_PORT`, `CLICKHOUSE_USER` and `CLICKHOUSE_PASSWORD` (a login that may create
+databases). Each test uses its own database. GitHub Actions runs them against
 ClickHouse 24.8 on every push.

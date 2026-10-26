@@ -3,7 +3,7 @@ import pytest
 from datetime import datetime, timezone, timedelta
 from activity_hub import activity_context, current_context, forwarded_headers
 from activity_hub.ids import uuid7
-from activity_hub.records import event_row, access_row, utc_timestamp, MAX_JSON_BYTES
+from activity_hub.records import event_row, access_row, utc_timestamp, mask_secrets, MAX_JSON_BYTES
 
 SOURCE = {"app": "x9-platform", "environment": "test", "service": "trading_service"}
 
@@ -56,6 +56,20 @@ def test_access_row_reads_who_and_where_from_the_context():
     row = access_row(SOURCE, context, method="GET", route="/positions/{ticket}", path="/positions/5",
                      status=200, duration_ms=12)
     assert (row["actor_id"], row["ip"], row["route"], row["status"]) == ("12", "1.2.3.4", "/positions/{ticket}", 200)
+
+
+def test_secrets_are_masked_at_any_depth():
+    sent = {"login": "ann", "password": "p", "profile": {"api_key": "k", "name": "Ann"},
+            "items": [{"auth_token": "t", "qty": 1}], "pin": "1234", "spinner": True}
+    assert mask_secrets(sent) == {"login": "ann", "password": "[masked]",
+                                  "profile": {"api_key": "[masked]", "name": "Ann"},
+                                  "items": [{"auth_token": "[masked]", "qty": 1}], "pin": "[masked]", "spinner": True}
+
+
+def test_an_oversized_body_is_noted_and_the_request_row_still_kept():
+    row = access_row(SOURCE, {}, method="POST", route="/x", path="/x", status=200, duration_ms=1,
+                     request_body={"rows": ["y" * 100] * 1000})
+    assert "not_kept" in row["request_body"] and row["route"] == "/x"
 
 
 def test_activity_context_nests_and_forwards():

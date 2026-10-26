@@ -17,7 +17,7 @@ EVENT_COLUMNS = (
 ACCESS_COLUMNS = (
     "id", "occurred_at", "app", "environment", "service", "tenant_id",
     "actor_type", "actor_id", "origin",
-    "method", "route", "path", "status", "duration_ms",
+    "method", "route", "path", "status", "duration_ms", "request_body",
     "ip", "country", "user_agent", "request_id", "session_id",
 )
 COLUMNS = {EVENTS_TABLE: EVENT_COLUMNS, ACCESS_TABLE: ACCESS_COLUMNS}
@@ -26,6 +26,10 @@ ACTION_PATTERN = re.compile(r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$")
 OUTCOMES = ("success", "refused", "failed")
 MAX_JSON_BYTES = 64 * 1024
 MAX_TEXT_LENGTH = 2048
+# keys whose values are never stored, at any depth of a recorded request body
+SECRET_KEY = re.compile(r"pass|secret|token|api_?key|access_?key|private_?key|credential|authori[sz]ation|cvv|otp|^pin$",
+                        re.IGNORECASE)
+MASKED = "[masked]"
 
 
 def utc_timestamp(value: datetime | None = None) -> str:
@@ -47,6 +51,15 @@ def _json(name: str, value) -> str:
     if len(encoded.encode()) > MAX_JSON_BYTES:
         raise ValueError(f"{name} is larger than {MAX_JSON_BYTES} bytes")
     return encoded
+
+
+def mask_secrets(value):
+    """The value with every secret-looking key's value replaced, recursively."""
+    if isinstance(value, dict):
+        return {key: MASKED if SECRET_KEY.search(str(key)) else mask_secrets(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [mask_secrets(item) for item in value]
+    return value
 
 
 def _event_id(value) -> str:
@@ -99,9 +112,18 @@ def event_row(source: dict, context: dict, *, action: str, actor_type=None, acto
     return row
 
 
+def _request_body(value) -> str:
+    """The masked body as stored; a note instead when masking left it over the size limit."""
+    try:
+        return _json("request_body", mask_secrets(value))
+    except ValueError:
+        return _json("request_body", {"not_kept": f"body is over {MAX_JSON_BYTES} bytes after masking"})
+
+
 def access_row(source: dict, context: dict, *, method: str, route: str, path: str, status: int,
-               duration_ms: int, occurred_at=None) -> dict:
-    """One access_logs row; who and from where come from the context."""
+               duration_ms: int, request_body=None, occurred_at=None) -> dict:
+    """One access_logs row; who and from where come from the context. request_body: what a change
+    sent, stored with its secrets masked."""
     return {
         "id": uuid7(),
         "occurred_at": utc_timestamp(occurred_at),
@@ -115,6 +137,7 @@ def access_row(source: dict, context: dict, *, method: str, route: str, path: st
         "path": _text(path),
         "status": int(status),
         "duration_ms": max(0, int(duration_ms)),
+        "request_body": _request_body(request_body),
         "ip": _text(context.get("ip")),
         "country": _text(context.get("country")),
         "user_agent": _text(context.get("user_agent")),

@@ -4,13 +4,20 @@ from activity_hub.database import get_client
 from activity_hub.logger import logger
 
 MIGRATIONS_DIR = Path(__file__).resolve().parent / "migrations"
-# the Hub's user may read and add rows, never change or remove them
-HUB_USER_GRANTS = "SELECT, INSERT"
+# what an append-only login may do: read and add rows, never change or remove them
+APPEND_ONLY_GRANTS = "SELECT, INSERT"
 IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$")
 
 
 def sql_string(value: str) -> str:
     return "'" + value.replace("\\", "\\\\").replace("'", "\\'") + "'"
+
+
+def _identifier(name: str) -> str:
+    # written into DDL, which takes no bound parameters
+    if not IDENTIFIER.match(name or ""):
+        raise ValueError(f"not a valid ClickHouse name: {name!r}")
+    return name
 
 
 def split_statements(sql: str) -> list:
@@ -19,28 +26,10 @@ def split_statements(sql: str) -> list:
     return [statement.strip() for statement in code.split(";") if statement.strip()]
 
 
-def create_database_and_user(settings: dict) -> None:
-    database, user = settings["database"], settings["user"]
-    # both are written into DDL, which takes no bound parameters
-    for name in (database, user):
-        if not IDENTIFIER.match(name):
-            raise ValueError(f"not a valid ClickHouse name: {name!r}")
-    password = sql_string(settings["password"])
-    client = get_client(settings, admin=True)
-    try:
-        client.command(f"CREATE DATABASE IF NOT EXISTS {database}")
-        client.command(f"CREATE USER IF NOT EXISTS {user} IDENTIFIED WITH sha256_password BY {password}")
-        # keeps the stored password in step with the settings when it is changed
-        client.command(f"ALTER USER {user} IDENTIFIED WITH sha256_password BY {password}")
-        client.command(f"GRANT {HUB_USER_GRANTS} ON {database}.* TO {user}")
-    finally:
-        client.close()
-
-
 def run_migrations(settings: dict) -> list:
     """Applies the migration files not applied yet, in name order; returns their names.
     Statements are written to be re-runnable, so a file stopped halfway is simply run again."""
-    client = get_client(settings, admin=True, database=settings["database"])
+    client = get_client(settings, database=settings["database"])
     try:
         client.command(
             "CREATE TABLE IF NOT EXISTS schema_migrations "
@@ -60,7 +49,26 @@ def run_migrations(settings: dict) -> list:
 
 
 def prepare_database(settings: dict) -> None:
-    """Creates the database, the Hub's append-only user and the tables. Safe to call on every
-    start; settings: host, port, database, user, password, admin_user, admin_password."""
-    create_database_and_user(settings)
+    """Creates the Hub's database and tables with the application's own ClickHouse login.
+    Safe to call on every start; settings: host, port, user, password, database."""
+    database = _identifier(settings["database"])
+    client = get_client(settings)
+    try:
+        client.command(f"CREATE DATABASE IF NOT EXISTS {database}")
+    finally:
+        client.close()
     run_migrations(settings)
+
+
+def create_append_only_user(settings: dict, user: str, password: str) -> None:
+    """Optional: a login that may only read and add records in the Hub's database, for an application
+    that wants even its own writer unable to change history. Run with an admin login; safe to repeat."""
+    database, user, secret = _identifier(settings["database"]), _identifier(user), sql_string(password)
+    client = get_client(settings)
+    try:
+        client.command(f"CREATE USER IF NOT EXISTS {user} IDENTIFIED WITH sha256_password BY {secret}")
+        # keeps the stored password in step when it is changed
+        client.command(f"ALTER USER {user} IDENTIFIED WITH sha256_password BY {secret}")
+        client.command(f"GRANT {APPEND_ONLY_GRANTS} ON {database}.* TO {user}")
+    finally:
+        client.close()

@@ -5,14 +5,14 @@ CONNECT_TIMEOUT_SECONDS = 5
 QUERY_TIMEOUT_SECONDS = 30
 
 
-def get_client(settings: dict, admin: bool = False, database: str | None = None):
-    """A ClickHouse client as the Hub's user, or as the admin login when admin is set.
+def get_client(settings: dict, database: str | None = None):
+    """A ClickHouse client with the application's login (settings: host, port, user, password).
     Without a session id the client can run queries from several threads at once."""
     return clickhouse_connect.get_client(
         host=settings["host"],
         port=settings["port"],
-        username=settings["admin_user"] if admin else settings["user"],
-        password=settings["admin_password"] if admin else settings["password"],
+        username=settings["user"],
+        password=settings["password"],
         database=database or "",
         autogenerate_session_id=False,
         connect_timeout=CONNECT_TIMEOUT_SECONDS,

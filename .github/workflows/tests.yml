@@ -33,7 +33,5 @@ jobs:
         env:
           CLICKHOUSE_HOST: localhost
           CLICKHOUSE_PORT: "8123"
-          CLICKHOUSE_USER: activity_hub
-          CLICKHOUSE_PASSWORD: test
-          CLICKHOUSE_ADMIN_USER: admin
-          CLICKHOUSE_ADMIN_PASSWORD: admin
+          CLICKHOUSE_USER: admin
+          CLICKHOUSE_PASSWORD: admin

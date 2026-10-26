@@ -162,6 +162,8 @@ class ActivityReader:
         row["id"] = str(row["id"])
         for key in ("occurred_at", "received_at"):
             row[key] = _timestamp(row[key])
+        if row.get("request_body"):
+            row["request_body"] = json.loads(row["request_body"])
         if "related" in row:
             row["related"] = [list(pair) for pair in row["related"]]
             for key in ("changes", "metadata"):
