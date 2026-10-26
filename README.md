@@ -13,7 +13,7 @@ behind the package's back.
 ## Install
 
 ```bash
-pip install "activity-hub @ https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.2.0.tar.gz"
+pip install "activity-hub @ https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.3.0.tar.gz"
 ```
 
 (The release archive needs no git on the machine installing it.)
@@ -129,7 +129,24 @@ with activity_context(actor_type="system", actor_id="liquidation", origin="syste
     hub.record_event("trade.liquidated", target_type="trade", target_id="11450", reason="stop out at 20%")
 ```
 
-## 4. Read
+## 4. Every database change (SQLAlchemy)
+
+```python
+from activity_hub.sqlalchemy import track_changes
+
+track_changes(hub, exclude_tables=("noisy_table",))
+```
+
+- Every insert, update and delete made through SQLAlchemy sessions is recorded as `data.created`,
+  `data.updated` or `data.deleted`. The table is the target type and the primary key the target id.
+- `changes` holds before/after of the changed columns (every column for a create or delete), with
+  secrets masked. Values over 64 KB are noted, not kept.
+- A change is recorded only after its transaction commits; a rolled-back change never is.
+- Recording never raises into the application's commit.
+- Changes made outside the ORM unit of work (Core statements, bulk `query.update`) are not seen.
+- Install with `pip install "activity-hub[sqlalchemy] @ …"`.
+
+## 5. Read
 
 ```python
 from activity_hub import ActivityReader
@@ -147,7 +164,7 @@ for chunk in reader.export_events_csv(tenant_id="3"):      # stream to a downloa
 - Pages hold up to 5000 rows. The cursor stays stable while new rows keep arriving.
 - Reading the log is itself worth recording: call `record_event("activity.searched", ...)`.
 
-## 5. Integrity
+## 6. Integrity
 
 ```python
 from activity_hub import seal_new_rows, verify, daily_seal, check_daily_seal
