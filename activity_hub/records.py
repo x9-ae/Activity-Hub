@@ -26,9 +26,12 @@ ACTION_PATTERN = re.compile(r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$")
 OUTCOMES = ("success", "refused", "failed")
 MAX_JSON_BYTES = 64 * 1024
 MAX_TEXT_LENGTH = 2048
-# keys whose values are never stored, at any depth of a recorded request body
+# keys whose values are never stored, at any depth of a recorded request body; a key that only
+# describes a secret (token_expire_time, password_type, api_key_count) is not one
 SECRET_KEY = re.compile(r"pass|secret|token|api_?key|access_?key|private_?key|credential|authori[sz]ation|cvv|otp|^pin$",
                         re.IGNORECASE)
+NOT_SECRET_SUFFIX = re.compile(r"(_at|_time|_date|_type|_types|_count|_mode|_expiry|_expires|_length|_status|_id)$",
+                               re.IGNORECASE)
 MASKED = "[masked]"
 
 
@@ -53,10 +56,14 @@ def _json(name: str, value) -> str:
     return encoded
 
 
+def _is_secret(key: str) -> bool:
+    return bool(SECRET_KEY.search(key)) and not NOT_SECRET_SUFFIX.search(key)
+
+
 def mask_secrets(value):
     """The value with every secret-looking key's value replaced, recursively."""
     if isinstance(value, dict):
-        return {key: MASKED if SECRET_KEY.search(str(key)) else mask_secrets(item) for key, item in value.items()}
+        return {key: MASKED if _is_secret(str(key)) else mask_secrets(item) for key, item in value.items()}
     if isinstance(value, list):
         return [mask_secrets(item) for item in value]
     return value

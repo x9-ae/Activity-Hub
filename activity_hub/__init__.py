@@ -5,7 +5,7 @@ from activity_hub.context import set_actor, activity_context, current_context, f
 from activity_hub.asgi import ActivityMiddleware
 from activity_hub.integrity import seal_new_rows, verify, daily_seal, check_daily_seal
 
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 
 __all__ = [
     "prepare_database",

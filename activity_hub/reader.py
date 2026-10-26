@@ -64,6 +64,29 @@ class ActivityReader:
         """Events matching every filter given (see EVENT_FILTERS). action "trade.closed" matches
         exactly; "trade." matches every trade action. related=("account", "100234") finds events
         whose target or related entities include that account."""
+        clauses, parameters = self._event_criteria(action, related, occurred_from, occurred_to, filters)
+        return self._page(EVENTS_TABLE, EVENT_COLUMNS, clauses, parameters, limit, cursor)
+
+    def count_over_time(self, kind: str, *, bucket_minutes: int, action: str | None = None,
+                        related: tuple | None = None, status_from: int | None = None, occurred_from=None,
+                        occurred_to=None, **filters) -> list:
+        """[{"at", "count"}] per bucket_minutes, oldest first, for the same criteria as the searches;
+        kind "events" or "requests". Buckets with nothing are left out."""
+        if kind == "events":
+            table = EVENTS_TABLE
+            clauses, parameters = self._event_criteria(action, related, occurred_from, occurred_to, filters)
+        else:
+            table = ACCESS_TABLE
+            clauses, parameters = self._access_criteria(status_from, occurred_from, occurred_to, filters)
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        result = self._client.query(
+            f"SELECT toStartOfInterval(occurred_at, INTERVAL {{bucket:UInt32}} MINUTE) AS at, count() "
+            f"FROM {table} {where} GROUP BY at ORDER BY at",
+            parameters={**parameters, "bucket": max(1, int(bucket_minutes))},
+        )
+        return [{"at": _timestamp(row[0]), "count": row[1]} for row in result.result_rows]
+
+    def _event_criteria(self, action, related, occurred_from, occurred_to, filters: dict) -> tuple:
         clauses, parameters = self._filters(EVENT_FILTERS, filters, occurred_from, occurred_to)
         if action:
             if action.endswith("."):
@@ -75,7 +98,7 @@ class ActivityReader:
             clauses.append(f"((target_type = {{rel_type:String}} AND target_id = {{rel_id:String}}) "
                            f"OR has({RELATED_KEYS}, {{rel_key:String}}))")
             parameters.update(rel_type=related[0], rel_id=str(related[1]), rel_key=f"{related[0]}:{related[1]}")
-        return self._page(EVENTS_TABLE, EVENT_COLUMNS, clauses, parameters, limit, cursor)
+        return clauses, parameters
 
     def timeline(self, target_type: str, target_id: str, *, limit: int = 50, cursor: str | None = None,
                  **filters) -> dict:
@@ -90,11 +113,15 @@ class ActivityReader:
     def search_access_logs(self, *, occurred_from=None, occurred_to=None, status_from: int | None = None,
                            limit: int = 50, cursor: str | None = None, **filters) -> dict:
         """API requests matching every filter given (see ACCESS_FILTERS); status_from=400 finds errors."""
+        clauses, parameters = self._access_criteria(status_from, occurred_from, occurred_to, filters)
+        return self._page(ACCESS_TABLE, ACCESS_COLUMNS, clauses, parameters, limit, cursor)
+
+    def _access_criteria(self, status_from, occurred_from, occurred_to, filters: dict) -> tuple:
         clauses, parameters = self._filters(ACCESS_FILTERS, filters, occurred_from, occurred_to)
         if status_from is not None:
             clauses.append("status >= {status_from:UInt16}")
             parameters["status_from"] = status_from
-        return self._page(ACCESS_TABLE, ACCESS_COLUMNS, clauses, parameters, limit, cursor)
+        return clauses, parameters
 
     def export_events_csv(self, **search):
         """CSV lines (header first) of every event matching the search, for streaming to a download."""

@@ -13,7 +13,7 @@ behind the package's back.
 ## Install
 
 ```bash
-pip install "activity-hub @ https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.3.1.tar.gz"
+pip install "activity-hub @ https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.3.2.tar.gz"
 ```
 
 (The release archive needs no git on the machine installing it.)
@@ -156,6 +156,7 @@ page = reader.search_events(actor_id="12", action="trade.", occurred_from="2026-
 page = reader.search_events(cursor=page["next_cursor"])    # next page, same filters
 reader.timeline("account", "100234")                       # the account and everything related to it
 reader.search_access_logs(status_from=400, service="trading_service")
+reader.count_over_time("events", bucket_minutes=60, action="user.")   # [{at, count}] for a chart
 for chunk in reader.export_events_csv(tenant_id="3"):      # stream to a download
     ...
 ```

@@ -60,10 +60,12 @@ def test_access_row_reads_who_and_where_from_the_context():
 
 def test_secrets_are_masked_at_any_depth():
     sent = {"login": "ann", "password": "p", "profile": {"api_key": "k", "name": "Ann"},
-            "items": [{"auth_token": "t", "qty": 1}], "pin": "1234", "spinner": True}
+            "items": [{"auth_token": "t", "qty": 1}], "pin": "1234", "spinner": True,
+            "token_expire_time": "2026-10-26 12:00:00", "password_type": "master"}
     assert mask_secrets(sent) == {"login": "ann", "password": "[masked]",
                                   "profile": {"api_key": "[masked]", "name": "Ann"},
-                                  "items": [{"auth_token": "[masked]", "qty": 1}], "pin": "[masked]", "spinner": True}
+                                  "items": [{"auth_token": "[masked]", "qty": 1}], "pin": "[masked]", "spinner": True,
+                                  "token_expire_time": "2026-10-26 12:00:00", "password_type": "master"}
 
 
 def test_an_oversized_body_is_noted_and_the_request_row_still_kept():

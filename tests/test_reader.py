@@ -66,6 +66,15 @@ def test_cursor_pages_through_everything_once(reader):
 
 
 @needs_clickhouse
+def test_counts_over_time_follow_the_same_criteria(reader):
+    hourly = reader.count_over_time("events", bucket_minutes=60, actor_id="100234")
+    assert [bucket["count"] for bucket in hourly] == [1] * 7
+    assert hourly[0]["at"] == "2026-10-01 00:00:00.000"
+    assert reader.count_over_time("events", bucket_minutes=1440, action="trade.")[0]["count"] == 7
+    assert sum(b["count"] for b in reader.count_over_time("requests", bucket_minutes=60, status_from=400)) == 1
+
+
+@needs_clickhouse
 def test_csv_export_and_access_log_search(reader):
     rows = list(csv.reader(io.StringIO("".join(reader.export_events_csv(action="trade.")))))
     assert rows[0][0] == "id" and len(rows) == 8
