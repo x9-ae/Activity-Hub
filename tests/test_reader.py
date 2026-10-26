@@ -39,6 +39,9 @@ def test_search_filters_and_newest_first(reader):
     assert len(reader.search_events(action="trade.")["items"]) == 7
     assert len(reader.search_events(action="trade.closed", occurred_from="2026-10-01 03:00:00")["items"]) == 4
     assert reader.search_events(tenant_id="3")["items"][0]["changes"]["after"] == {"leverage": 200}
+    assert len(reader.search_events(category=["trade", "account"])["items"]) == 8
+    assert len(reader.search_events(category=[])["items"]) == 9, "an empty list filters nothing"
+    assert [i["route"] for i in reader.search_access_logs(method=["POST", "DELETE"])["items"]] == ["/y"]
     with pytest.raises(ValueError, match="unknown filters"):
         reader.search_events(password="x")
 

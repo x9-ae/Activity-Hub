@@ -8,7 +8,7 @@ from activity_hub.records import EVENTS_TABLE, ACCESS_TABLE, EVENT_COLUMNS, ACCE
 
 MAX_PAGE_SIZE = 5000
 RELATED_KEYS = "arrayMap(r -> concat(tupleElement(r, 1), ':', tupleElement(r, 2)), related)"
-# filter name -> (column, ClickHouse type); each is an exact match
+# filter name -> (column, ClickHouse type); a value is an exact match, a list matches any of its values
 EVENT_FILTERS = {
     "app": ("app", "String"), "environment": ("environment", "String"), "service": ("service", "String"),
     "tenant_id": ("tenant_id", "String"), "category": ("category", "String"), "outcome": ("outcome", "String"),
@@ -45,7 +45,8 @@ def _decode_cursor(cursor: str) -> tuple:
 
 
 class ActivityReader:
-    """Searches the Hub. Every method takes exact-match filters plus a time range, returns newest
+    """Searches the Hub. Every method takes filters (a value, or a list of values any of which
+    matches) plus a time range, returns newest
     first, and pages with an opaque cursor (stable while new rows keep arriving).
 
     settings: host, port, database, user, password (the Hub's user only needs SELECT).
@@ -127,11 +128,15 @@ class ActivityReader:
             raise ValueError(f"unknown filters: {sorted(unknown)}")
         clauses, parameters = [], {}
         for name, value in filters.items():
-            if value is None or value == "":
+            if value is None or value == "" or value == []:
                 continue
             column, kind = allowed[name]
-            clauses.append(f"{column} = {{{name}:{kind}}}")
-            parameters[name] = value
+            if isinstance(value, (list, tuple)):
+                clauses.append(f"{column} IN {{{name}:Array({kind})}}")
+                parameters[name] = list(value)
+            else:
+                clauses.append(f"{column} = {{{name}:{kind}}}")
+                parameters[name] = value
         if occurred_from:
             clauses.append("occurred_at >= {occurred_from:DateTime64(3, 'UTC')}")
             parameters["occurred_from"] = occurred_from
