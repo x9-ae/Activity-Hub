@@ -5,7 +5,8 @@
 
 Records data.created / data.updated / data.deleted with the table as target type and the primary key
 as target id; changes holds the changed columns (all columns for a create or delete), with secrets
-masked. A change is recorded only once its transaction commits; a rolled-back one never is.
+masked. related_columns names columns that point at an entity, e.g. {"account_number": "account"}:
+a row holding one is related to that entity, so the change shows on its timeline. A change is recorded only once its transaction commits; a rolled-back one never is.
 Statements that bypass the ORM unit of work (Core, or bulk query.update / query.delete) are not seen.
 
 hub: anything with record_event(action, **fields). Outside a request no actor is known, so pass an
@@ -25,7 +26,7 @@ ACTION_DELETED = "data.deleted"
 _tracked = []
 
 
-def _change(obj, action: str) -> dict | None:
+def _change(obj, action: str, related_columns: dict) -> dict | None:
     state = inspect(obj)
     mapper = state.mapper
     if action == ACTION_UPDATED:
@@ -45,21 +46,25 @@ def _change(obj, action: str) -> dict | None:
     changes = mask_secrets(changes)
     if len(json.dumps(changes, default=str)) > MAX_JSON_BYTES:
         changes = {"not_kept": f"the changed values are over {MAX_JSON_BYTES} bytes"}
+    related = [(entity, str(state.dict[column])) for column, entity in related_columns.items()
+               if state.dict.get(column) not in (None, "")]
     return {
         "action": action,
         "target_type": mapper.persist_selectable.name,
         "target_id": ":".join(str(value) for value in mapper.primary_key_from_instance(obj)),
         "changes": changes,
+        **({"related": related} if related else {}),
     }
 
 
-def track_changes(hub, *, exclude_tables=(), session_class=Session) -> None:
+def track_changes(hub, *, exclude_tables=(), session_class=Session, related_columns=None) -> None:
     """Starts recording ORM changes for every session of session_class (all sessions by default).
     Safe to call more than once; recording never raises into the application's commit."""
     if session_class in _tracked:
         return
     _tracked.append(session_class)
     excluded = set(exclude_tables)
+    related_columns = dict(related_columns or {})
 
     @event.listens_for(session_class, "after_flush")
     def collect(session, flush_context):
@@ -71,7 +76,7 @@ def track_changes(hub, *, exclude_tables=(), session_class=Session) -> None:
                 try:
                     if inspect(obj).mapper.persist_selectable.name in excluded:
                         continue
-                    change = _change(obj, action)
+                    change = _change(obj, action, related_columns)
                     if change:
                         pending.append(change)
                 except Exception:

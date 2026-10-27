@@ -136,7 +136,8 @@ with activity_context(actor_type="system", actor_id="liquidation", origin="syste
 ```python
 from activity_hub.sqlalchemy import track_changes
 
-track_changes(hub, exclude_tables=("noisy_table",))
+track_changes(hub, exclude_tables=("noisy_table",),
+              related_columns={"account_number": "account", "ticket_number": "ticket"})
 ```
 
 - Every insert, update and delete made through SQLAlchemy sessions is recorded as `data.created`,
@@ -144,6 +145,8 @@ track_changes(hub, exclude_tables=("noisy_table",))
 - `changes` holds before/after of the changed columns (every column for a create or delete), with
   secrets masked. Values over 64 KB are noted, not kept.
 - A change is recorded only after its transaction commits; a rolled-back change never is.
+- `related_columns`: a row holding one of these columns is related to that entity, so
+  `reader.timeline("account", "100234")` shows its changes too.
 - Recording never raises into the application's commit.
 - Changes made outside the ORM unit of work (Core statements, bulk `query.update`) are not seen.
 - Install with `pip install "activity-hub[sqlalchemy] @ …"`.

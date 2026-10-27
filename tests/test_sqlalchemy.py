@@ -86,3 +86,38 @@ def test_a_failing_hub_never_breaks_the_commit(db):
     db.add(Symbol(name="XAUUSD", digits=2))
     db.commit()
     assert db.query(Symbol).filter_by(name="XAUUSD").count() == 1
+
+
+
+class Position(Base):
+    __tablename__ = "positions"
+    id = Column(Integer, primary_key=True)
+    account_number = Column(String(20))
+    ticket_number = Column(Integer)
+    stop_loss = Column(String(20))
+
+
+class RelatedSession(Session):
+    pass
+
+
+related_hub = FakeHub()
+track_changes(related_hub, session_class=RelatedSession,
+              related_columns={"account_number": "account", "ticket_number": "ticket"})
+
+
+def test_a_row_naming_an_entity_is_related_to_it():
+    engine = create_engine("sqlite://")
+    Base.metadata.create_all(engine)
+    session = sessionmaker(bind=engine, class_=RelatedSession)()
+    session.add(Position(account_number="100234", ticket_number=11450))
+    session.add(Position(account_number="", ticket_number=None))   # nothing to relate
+    session.commit()
+    position = session.query(Position).filter_by(ticket_number=11450).one()
+    position.stop_loss = "1.07"
+    session.commit()
+    created, unrelated, updated = related_hub.events
+    assert created[1]["related"] == [("account", "100234"), ("ticket", "11450")]
+    assert "related" not in unrelated[1]
+    assert updated[0] == "data.updated" and updated[1]["related"] == [("account", "100234"), ("ticket", "11450")]
+    session.close()
