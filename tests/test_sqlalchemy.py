@@ -182,3 +182,30 @@ def test_a_joined_table_subclass_is_recorded_under_its_own_table(db):
     db.add(Future(expiry="2026-12"))
     db.commit()
     assert hub.events[-1][1]["target_type"] == "futures"
+
+
+class Deal(Base):
+    __tablename__ = "deals"
+    id = Column(Integer, primary_key=True)
+    ticket_number = Column(Integer)
+    position_ticket_number = Column(Integer)
+
+
+class DealSession(Session):
+    pass
+
+
+deal_hub = FakeHub()
+track_changes(deal_hub, session_class=DealSession,
+              related_columns={"ticket_number": "ticket", "position_ticket_number": "ticket",
+                               "deals.ticket_number": None})
+
+
+def test_a_table_can_say_its_column_names_no_entity():
+    engine = create_engine("sqlite://")
+    Base.metadata.create_all(engine)
+    session = sessionmaker(bind=engine, class_=DealSession)()
+    session.add(Deal(ticket_number=10500, position_ticket_number=11450))
+    session.commit()
+    assert deal_hub.events[0][1]["related"] == [("ticket", "11450")], "the deal number is not a position ticket"
+    session.close()

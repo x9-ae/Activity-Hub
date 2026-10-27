@@ -56,6 +56,8 @@ class ActivityHub:
         related = [tuple(pair) for pair in fields.get("related") or ()]
         target = (fields.get("target_type"), str(fields.get("target_id", "")))
         for column, entity in self.related_columns.items():
+            if "." in column or not entity:
+                continue   # a table's own override; an about record names no table
             pair = (entity, str(about.get(column, "")))
             if pair[1] and pair not in related and pair != target:
                 related.append(pair)

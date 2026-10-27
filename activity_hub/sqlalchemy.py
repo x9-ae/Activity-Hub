@@ -6,7 +6,8 @@
 Records data.created / data.updated / data.deleted with the table as target type and the primary key
 as target id; changes holds the changed columns (all columns for a create or delete), with secrets
 masked. related_columns names columns that point at an entity, e.g. {"account_number": "account"}:
-a row holding one is related to that entity, so the change shows on its timeline. A change is recorded only once its transaction commits; a rolled-back one never is.
+a row holding one is related to that entity, so the change shows on its timeline. A "table.column"
+key applies to that table only and wins over the plain column; None there relates nothing. A change is recorded only once its transaction commits; a rolled-back one never is.
 Statements that bypass the ORM unit of work (Core, or bulk query.update / query.delete) are not seen.
 
 hub: anything with record_event(action, **fields). Outside a request no actor is known, so pass an
@@ -29,9 +30,19 @@ ACTION_DELETED = "data.deleted"
 _tracked = []
 
 
+def _columns_of(table: str, related_columns: dict) -> dict:
+    """The related columns for one table: "table.column" entries override the plain "column" ones
+    there (None: that table's column names no entity, e.g. a deal number beside position tickets)."""
+    columns = {key: entity for key, entity in related_columns.items() if "." not in key}
+    prefix = f"{table}."
+    columns.update({key[len(prefix):]: entity for key, entity in related_columns.items() if key.startswith(prefix)})
+    return columns
+
+
 def _change(obj, action: str, related_columns: dict) -> dict | None:
     state = inspect(obj)
     mapper = state.mapper
+    table = mapper.local_table.name
     if action == ACTION_UPDATED:
         before, after = {}, {}
         for column in mapper.column_attrs:
@@ -49,11 +60,11 @@ def _change(obj, action: str, related_columns: dict) -> dict | None:
     changes = mask_secrets(changes)
     if len(json.dumps(changes, default=str)) > MAX_JSON_BYTES:
         changes = {"not_kept": f"the changed values are over {MAX_JSON_BYTES} bytes"}
-    related = [(entity, str(state.dict[column])) for column, entity in related_columns.items()
-               if state.dict.get(column) not in (None, "")]
+    related = [(entity, str(state.dict[column])) for column, entity in _columns_of(table, related_columns).items()
+               if entity and state.dict.get(column) not in (None, "")]
     return {
         "action": action,
-        "target_type": mapper.local_table.name,
+        "target_type": table,
         "target_id": ":".join(str(value) for value in mapper.primary_key_from_instance(obj)),
         "changes": changes,
         **({"related": related} if related else {}),
