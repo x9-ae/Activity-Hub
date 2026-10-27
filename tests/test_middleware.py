@@ -88,3 +88,18 @@ def test_forwarded_actor_is_believed_only_from_trusted_callers(settings, tmp_pat
     assert count(settings, "SELECT count() FROM access_logs WHERE path = '/positions/6/close' AND ip = '198.51.100.1' "
                            "AND request_id = 'r-1'") == 1
     hub.close()
+
+
+def test_forwarded_values_are_ascii_and_come_back_as_they_were():
+    import httpx
+    from activity_hub import activity_context
+    from activity_hub.asgi import ActivityMiddleware
+    name, agent = "José مريم 100%", "ua/1 \u00e9\r\nX-Injected: 1"
+    with activity_context(actor_type="staff", actor_id="12", actor_name=name, user_agent=agent):
+        headers = forwarded_headers()
+    httpx.Request("GET", "http://service/x", headers=headers)   # refused before when a value was not ASCII
+    assert all(v.isascii() and "\r" not in v and "\n" not in v for v in headers.values())
+    received = {k: v.encode().decode("latin-1") for k, v in headers.items()}   # as the server reads them
+    middleware = ActivityMiddleware(None, hub=None, trust_forwarded=lambda h: True)
+    context = middleware._context({"client": ("10.0.0.1", 1)}, received)
+    assert (context["actor_name"], context["user_agent"], context["actor_id"]) == (name, agent, "12")

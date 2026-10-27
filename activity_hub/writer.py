@@ -112,8 +112,12 @@ class Writer:
             fresh = [row for row_id, row in rows.items() if row_id not in existing]
             self.stats["duplicates"] += received[table] - len(fresh)
             if fresh:
+                # The server gathers the inserts of every service into a few parts (one per insert
+                # would leave it merging all day); wait_for_async_insert keeps each insert answered
+                # only once it is stored, so a failure still reaches the spool.
                 self._client.insert(table, [insert_values(table, row) for row in fresh],
-                                    column_names=list(COLUMNS[table]), settings={"async_insert": 0})
+                                    column_names=list(COLUMNS[table]),
+                                    settings={"async_insert": 1, "wait_for_async_insert": 1})
                 self.stats["written"] += len(fresh)
 
     def _existing_ids(self, table: str, rows: dict) -> set:

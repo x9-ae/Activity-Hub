@@ -1,5 +1,6 @@
 import json
 import time
+from urllib.parse import unquote
 from activity_hub.context import _current, FORWARD_HEADERS
 from activity_hub.ids import uuid7
 from activity_hub.logger import logger
@@ -123,5 +124,5 @@ class ActivityMiddleware:
             "request_id": headers.get("x-request-id", "")[:128] or uuid7(),
         }
         if self.trust_forwarded and self.trust_forwarded(headers):
-            context.update({field: headers[header] for field, header in FORWARD_HEADERS.items() if headers.get(header)})
+            context.update({field: unquote(headers[header]) for field, header in FORWARD_HEADERS.items() if headers.get(header)})
         return context

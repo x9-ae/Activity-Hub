@@ -1,11 +1,13 @@
 from contextlib import contextmanager
 from contextvars import ContextVar
+from urllib.parse import quote
 
 CONTEXT_FIELDS = (
     "actor_type", "actor_id", "actor_name", "tenant_id", "session_id",
     "origin", "ip", "country", "user_agent", "request_id",
 )
-# headers that carry the context to another service of the same application
+# headers that carry the context to another service of the same application; values are
+# percent-encoded (forward_value), since a header holds ASCII only and a name or a user agent need not
 FORWARD_HEADERS = {
     "request_id": "x-request-id",
     "actor_type": "x-actor-type",
@@ -52,7 +54,13 @@ def activity_context(**fields):
         _current.reset(token)
 
 
+def forward_value(value) -> str:
+    """A context value as a header can carry it: printable ASCII as it is, anything else (accented
+    or Arabic names, control characters, '%') percent-encoded. The middleware decodes it."""
+    return quote(str(value), safe=" !\"#$&'()*+,-./:;<=>?@[]^_`{|}~")
+
+
 def forwarded_headers() -> dict:
     """Headers to add to a call into another service, so it records the same actor and request."""
     context = current_context()
-    return {header: context[field] for field, header in FORWARD_HEADERS.items() if context.get(field)}
+    return {header: forward_value(context[field]) for field, header in FORWARD_HEADERS.items() if context.get(field)}

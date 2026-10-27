@@ -77,7 +77,8 @@ hub.record_event(
 - A wrong event (bad action name, no actor, oversized metadata) raises `ValueError`. Problems
   with the database never raise.
 
-Rows are written in the background, in batches of up to 200 or every second. If ClickHouse cannot
+Rows are written in the background, in batches of up to 200 or every second, as ClickHouse async
+inserts that wait until stored (the server merges every writer's inserts into few parts). If ClickHouse cannot
 be reached, they go to spool files in `spool_dir` and are written later, by this process or any
 other one sharing the directory. Nothing is lost and nothing is stored twice.
 
@@ -118,7 +119,8 @@ Query strings, responses and non-JSON bodies are never stored.
 | `trust_forwarded(headers)` | Requests whose `X-Actor-*` / `X-Client-*` headers are believed, e.g. internal calls carrying your service key |
 
 Calling another of your services on behalf of the same user: add `forwarded_headers()` to the
-outgoing request, so it records the same actor and request id.
+outgoing request, so it records the same actor and request id. Values are percent-encoded (a
+header carries ASCII only, a name or user agent need not) and decoded by the receiving middleware.
 
 Outside a request, e.g. in a background job:
 
