@@ -10,6 +10,9 @@ MINUTE = timedelta(minutes=1)
 EMPTY_ROWS_HASH = hashlib.sha256(b"").hexdigest()
 # rows still being inserted when a minute ends are given this long to land before it is sealed
 DEFAULT_LAG_SECONDS = 120
+# A minute with no rows is sealed only on the hour: a checkpoint that rows added to an empty minute
+# before it show (as rows in a minute with no seal), at 24 seals a day instead of 1440.
+CHECKPOINT_MINUTE = 0
 
 
 def _columns(table: str) -> str:
@@ -77,10 +80,13 @@ def _seal_table(client, table: str, end: datetime) -> int:
     seals = []
     while window < end:
         row_count, rows_hash = windows.get(window, (0, EMPTY_ROWS_HASH))
-        digest = _chain(prev_hash, table, window, row_count, rows_hash, columns)
-        seals.append([table, window, row_count, rows_hash, prev_hash, digest, columns])
-        prev_hash, window = digest, window + MINUTE
-    client.insert(SEALS_TABLE, seals, column_names=list(SEAL_COLUMNS))
+        if row_count or window.minute == CHECKPOINT_MINUTE:
+            digest = _chain(prev_hash, table, window, row_count, rows_hash, columns)
+            seals.append([table, window, row_count, rows_hash, prev_hash, digest, columns])
+            prev_hash = digest
+        window += MINUTE
+    if seals:
+        client.insert(SEALS_TABLE, seals, column_names=list(SEAL_COLUMNS))
     return len(seals)
 
 
@@ -139,7 +145,8 @@ def _check_table(client, table: str, seals: list) -> list:
                 if seal["hash"] != previous["hash"]:
                     problem("minute sealed twice")
                 continue
-            elif window != previous["window_start"] + MINUTE:
+            elif window - previous["window_start"] > timedelta(hours=1):
+                # a checkpoint is written every hour, rows or not: a longer gap means seals removed
                 problem(f"seals missing from {_text(previous['window_start'] + MINUTE)}")
             elif seal["prev_hash"] != previous["hash"]:
                 problem("chain broken")

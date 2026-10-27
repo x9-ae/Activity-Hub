@@ -91,3 +91,19 @@ def test_csv_export_and_access_log_search(reader):
     assert rows[0][0] == "id" and len(rows) == 8
     errors = reader.search_access_logs(status_from=400)["items"]
     assert [(item["route"], item["status"]) for item in errors] == [("/y", 409)]
+
+
+@needs_clickhouse
+def test_a_timeline_reads_by_the_indexed_key_and_finds_target_and_related(settings, tmp_path):
+    from activity_hub import ActivityHub, ActivityReader
+    hub = ActivityHub(settings, app="x9", environment="t", service="s", spool_dir=str(tmp_path))
+    hub.record_event("trade.closed", actor_type="system", target_type="ticket", target_id="11450",
+                     related=[("account", "100234")])
+    hub.record_event("balance.added", actor_type="system", target_type="account", target_id="100234")
+    hub.record_event("balance.added", actor_type="system", target_type="account", target_id="999")
+    hub.flush()
+    hub.close()
+    reader = ActivityReader(settings)
+    assert len(reader.timeline("account", "100234")["items"]) == 2
+    assert [e["action"] for e in reader.timeline("ticket", "11450")["items"]] == ["trade.closed"]
+    reader.close()

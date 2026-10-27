@@ -6,7 +6,7 @@ from activity_hub.asgi import ActivityMiddleware
 from activity_hub.records import diff
 from activity_hub.integrity import seal_new_rows, verify, daily_seal, check_daily_seal
 
-__version__ = "0.4.1"
+__version__ = "0.5.0"
 
 __all__ = [
     "prepare_database",

@@ -13,7 +13,7 @@ behind the package's back.
 ## Install
 
 ```bash
-pip install "activity-hub @ https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.4.1.tar.gz"
+pip install "activity-hub @ https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.5.0.tar.gz"
 ```
 
 (The release archive needs no git on the machine installing it.)
@@ -186,6 +186,8 @@ for chunk in reader.export_events_csv(tenant_id="3"):      # stream to a downloa
 ```
 
 - Results come newest first. Times are UTC, written `YYYY-MM-DD HH:MM:SS.mmm`.
+- A timeline (`related=` / `timeline`) reads by `related_keys`, every `type:id` the event concerns
+  (target and related), which has its own index: only the blocks holding that key are read.
 - Pages hold up to 5000 rows. The cursor stays stable while new rows keep arriving.
 - Reading the log is itself worth recording: call `record_event("activity.searched", ...)`.
 
@@ -200,12 +202,15 @@ record = daily_seal(settings, date)     # keep outside the database, e.g. object
 check_daily_seal(settings, record)      # [] while the database still matches it
 ```
 
-**How sealing works.** Each minute of each table is sealed: the row count, and a SHA-256 over
-every row in id order. Each seal's hash also covers the previous seal's hash.
+**How sealing works.** Each minute of each table that holds rows is sealed: the row count, and a
+SHA-256 over every row in id order. Each seal's hash also covers the previous seal's hash. A minute
+with no rows is sealed only on the hour, as a checkpoint: 24 empty seals a day, not 1440, and rows
+added to an empty minute later still show.
 
 **What `verify` reports.**
 - a row changed or removed after its minute was sealed;
-- a seal altered, removed or duplicated;
+- a seal altered, removed (the chain breaks, or more than an hour passes between seals) or
+  duplicated with a different hash;
 - rows in a minute with no seal.
 
 **The daily seal record.** Keeping it elsewhere catches even a rewrite of rows and seals together.

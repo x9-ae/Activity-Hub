@@ -7,7 +7,6 @@ from activity_hub.database import get_client
 from activity_hub.records import EVENTS_TABLE, ACCESS_TABLE, EVENT_COLUMNS, ACCESS_COLUMNS
 
 MAX_PAGE_SIZE = 5000
-RELATED_KEYS = "arrayMap(r -> concat(tupleElement(r, 1), ':', tupleElement(r, 2)), related)"
 # filter name -> (column, ClickHouse type); a value is an exact match, a list matches any of its values
 EVENT_FILTERS = {
     "app": ("app", "String"), "environment": ("environment", "String"), "service": ("service", "String"),
@@ -129,9 +128,9 @@ class ActivityReader:
                 clauses.append("action = {action:String}")
             parameters["action"] = action
         if related:
-            clauses.append(f"((target_type = {{rel_type:String}} AND target_id = {{rel_id:String}}) "
-                           f"OR has({RELATED_KEYS}, {{rel_key:String}}))")
-            parameters.update(rel_type=related[0], rel_id=str(related[1]), rel_key=f"{related[0]}:{related[1]}")
+            # related_keys holds the target too (migration 0006), behind its own index
+            clauses.append("has(related_keys, {rel_key:String})")
+            parameters["rel_key"] = f"{related[0]}:{related[1]}"
         return clauses, parameters
 
     def timeline(self, target_type: str, target_id: str, *, limit: int = 50, cursor: str | None = None,
