@@ -1,5 +1,5 @@
 import pytest
-from sqlalchemy import JSON, Column, Integer, String, create_engine
+from sqlalchemy import JSON, Column, ForeignKey, Integer, String, create_engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 from activity_hub.sqlalchemy import track_changes
 
@@ -121,3 +121,64 @@ def test_a_row_naming_an_entity_is_related_to_it():
     assert "related" not in unrelated[1]
     assert updated[0] == "data.updated" and updated[1]["related"] == [("account", "100234"), ("ticket", "11450")]
     session.close()
+
+
+def test_snapshot_reads_the_values_in_memory_only():
+    from activity_hub.sqlalchemy import snapshot
+    symbol = Symbol(id=7, name="EURUSD", digits=5)
+    assert snapshot(symbol, "name", "digits") == {"name": "EURUSD", "digits": 5}
+    assert snapshot(symbol)["id"] == 7
+
+
+def test_a_savepoint_keeps_its_changes_until_the_outer_commit_and_a_rolled_back_one_drops_only_its_own(db):
+    db.add(Symbol(id=1, name="EURUSD", digits=5))
+    db.flush()
+    savepoint = db.begin_nested()
+    db.add(Symbol(id=2, name="GBPUSD", digits=5))
+    db.flush()
+    savepoint.rollback()
+    savepoint = db.begin_nested()
+    db.add(Symbol(id=3, name="XAUUSD", digits=2))
+    db.flush()
+    savepoint.commit()
+    assert hub.events == [], "a released savepoint is not the commit"
+    db.commit()
+    assert sorted(fields["target_id"] for _, fields in hub.events) == ["1", "3"]
+
+    hub.events.clear()
+    savepoint = db.begin_nested()
+    db.add(Symbol(id=4, name="USDJPY", digits=3))
+    db.flush()
+    savepoint.commit()
+    db.rollback()
+    assert hub.events == [], "a released savepoint inside a rolled-back transaction never happened"
+
+
+def test_a_before_value_never_loaded_is_marked_not_loaded(db):
+    symbol = Symbol(name="EURUSD", digits=5)
+    db.add(symbol)
+    db.commit()
+    symbol.digits = 3   # expired by the commit and written without being read
+    db.commit()
+    assert hub.events[-1][1]["changes"] == {"before": {"digits": "[not loaded]"}, "after": {"digits": 3}}
+
+
+class Instrument(Base):
+    __tablename__ = "instruments"
+    id = Column(Integer, primary_key=True)
+    kind = Column(String(10))
+    __mapper_args__ = {"polymorphic_on": kind, "polymorphic_identity": "instrument"}
+
+
+class Future(Instrument):
+    __tablename__ = "futures"
+    id = Column(Integer, ForeignKey("instruments.id"), primary_key=True)
+    expiry = Column(String(10))
+    __mapper_args__ = {"polymorphic_identity": "future"}
+
+
+def test_a_joined_table_subclass_is_recorded_under_its_own_table(db):
+    Base.metadata.create_all(db.get_bind())
+    db.add(Future(expiry="2026-12"))
+    db.commit()
+    assert hub.events[-1][1]["target_type"] == "futures"

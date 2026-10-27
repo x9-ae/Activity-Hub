@@ -44,6 +44,16 @@ def _decode_cursor(cursor: str) -> tuple:
         raise ValueError("invalid cursor")
 
 
+def _cell(value):
+    """A CSV value; text a spreadsheet would run as a formula (a user agent or name can be anything)
+    is prefixed so it stays text."""
+    if isinstance(value, (dict, list)):
+        value = json.dumps(value)
+    if isinstance(value, str) and value[:1] in ("=", "+", "-", "@", "\t", "\r"):
+        return "'" + value
+    return value
+
+
 class ActivityReader:
     """Searches the Hub. Every method takes filters (a value, or a list of values any of which
     matches) plus a time range, returns newest
@@ -92,7 +102,8 @@ class ActivityReader:
         """[{"value", "count"}] for one filter field, most frequent first, under the same criteria as the
         searches; a filter on the field itself is left out, so every choice stays visible (a facet)."""
         allowed = EVENT_FILTERS if kind == "events" else ACCESS_FILTERS
-        if field not in allowed:
+        if field not in allowed or field == "tenant_id":
+            # tenant_id's own filter would be dropped below and count every tenant's rows
             raise ValueError(f"unknown field: {field}")
         filters.pop(field, None)
         if kind == "events":
@@ -163,7 +174,7 @@ class ActivityReader:
         while True:
             page = search(limit=MAX_PAGE_SIZE, cursor=cursor, **criteria)
             for item in page["items"]:
-                writer.writerow([json.dumps(item[c]) if isinstance(item[c], (dict, list)) else item[c] for c in columns])
+                writer.writerow([_cell(item[c]) for c in columns])
             yield buffer.getvalue()
             buffer.seek(0)
             buffer.truncate()
@@ -199,7 +210,9 @@ class ActivityReader:
         limit = max(1, min(int(limit), MAX_PAGE_SIZE))
         if cursor:
             occurred_at, row_id = _decode_cursor(cursor)
-            clauses = [*clauses, "(occurred_at, id) < ({cursor_at:DateTime64(3, 'UTC')}, {cursor_id:UUID})"]
+            # the plain bound lets ClickHouse skip the partitions and granules past the cursor
+            clauses = [*clauses, "occurred_at <= {cursor_at:DateTime64(3, 'UTC')}",
+                       "(occurred_at, id) < ({cursor_at:DateTime64(3, 'UTC')}, {cursor_id:UUID})"]
             parameters = {**parameters, "cursor_at": occurred_at, "cursor_id": row_id}
         where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
         selected = ", ".join(("received_at", *columns))

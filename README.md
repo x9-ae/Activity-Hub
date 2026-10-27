@@ -13,7 +13,7 @@ behind the package's back.
 ## Install
 
 ```bash
-pip install "activity-hub @ https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.3.2.tar.gz"
+pip install "activity-hub @ https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.4.0.tar.gz"
 ```
 
 (The release archive needs no git on the machine installing it.)
@@ -70,6 +70,24 @@ hub.record_event(
 ```
 
 `record_event` returns the event id. Every field is listed in its docstring.
+
+An event about a database row passes the row itself, so the call names only the moment:
+
+```python
+from activity_hub import diff
+from activity_hub.sqlalchemy import snapshot
+
+hub = ActivityHub(settings, ..., related_columns={"account_number": "account", "ticket_number": "ticket"})
+
+trade = snapshot(position)                 # plain values, read before the commit expires them
+hub.record_event("trade.closed", about=trade, target_type="ticket", target_id=trade["ticket_number"],
+                 metadata={"close_price": 1.0832})
+```
+
+- `about` goes into `metadata` (given metadata wins), and every column named in `related_columns`
+  relates the event to that entity: the event shows on the account's timeline with no extra code.
+- `snapshot(obj, *columns)` reads only values already in memory; it never queries.
+- `diff(before, after)` gives the `changes` of two snapshots, or `None` when nothing changed.
 
 - Who acted, from which IP and app, and in which request: taken from the current request (see 3)
   when not passed.
@@ -145,8 +163,8 @@ track_changes(hub, exclude_tables=("noisy_table",),
 - `changes` holds before/after of the changed columns (every column for a create or delete), with
   secrets masked. Values over 64 KB are noted, not kept.
 - A change is recorded only after its transaction commits; a rolled-back change never is.
-- `related_columns`: a row holding one of these columns is related to that entity, so
-  `reader.timeline("account", "100234")` shows its changes too.
+- `related_columns` (defaults to the hub's): a row holding one of these columns is related to that
+  entity, so `reader.timeline("account", "100234")` shows its changes too.
 - Recording never raises into the application's commit.
 - Changes made outside the ORM unit of work (Core statements, bulk `query.update`) are not seen.
 - Install with `pip install "activity-hub[sqlalchemy] @ …"`.

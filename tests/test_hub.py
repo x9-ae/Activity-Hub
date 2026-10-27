@@ -64,3 +64,17 @@ def test_a_disabled_hub_checks_events_but_writes_nothing(tmp_path):
     assert hub.record_event("trade.closed", actor_type="system")
     assert hub.flush() and hub.stats() == {}
     assert not list(tmp_path.iterdir())
+
+
+def test_an_outage_spools_in_bulk_and_close_loses_nothing(tmp_path):
+    import json
+    from activity_hub.writer import Writer
+    down = {"host": "127.0.0.1", "port": 1, "user": "x", "password": "x", "database": "x"}
+    writer = Writer(down, str(tmp_path), batch_size=10, flush_interval=0.05, max_queue=5)
+    for n in range(200):
+        writer.put("events", {"id": str(uuid.uuid4()), "occurred_at": "2026-10-27 10:00:00.000", "n": n})
+    writer.close(5)
+    files = list(tmp_path.glob("*.jsonl"))
+    rows = [json.loads(line) for path in files for line in path.read_text().splitlines()]
+    assert len(rows) == 200
+    assert len(files) < 40, "the overflow and the outage are spooled in bulk, not a file per row"

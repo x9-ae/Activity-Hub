@@ -13,7 +13,13 @@ from activity_hub.logger import logger
 REPLAY_EVERY_SECONDS = 10
 DEDUP_WINDOW_DAYS = 1
 # a claimed spool file still there after this long belongs to a writer that died while replaying it
+# (the claim refreshes the file's time, so an old spool file is not taken for an abandoned claim)
 STALE_CLAIM_SECONDS = 600
+# spool files replayed per round, so a long backlog never starves the live queue
+REPLAY_FILES_PER_ROUND = 20
+# rows spooled per file while the database is down: writing each small batch would cost a file and,
+# before that, a connect timeout per batch
+SPOOL_ROWS_PER_FILE = 10_000
 
 
 class Writer:
@@ -30,6 +36,10 @@ class Writer:
         self._spool_dir.mkdir(parents=True, exist_ok=True)
         self._claim_suffix = f".claimed-{socket.gethostname()}-{os.getpid()}"
         self._client = None
+        # set when a write fails: rows go straight to the spool until a replay round gets through
+        self._down = False
+        self._overflow = []
+        self._overflow_lock = threading.Lock()
         self._stopping = threading.Event()
         self._last_replay = 0.0
         self.stats = {"written": 0, "duplicates": 0, "spooled": 0, "replayed": 0, "write_errors": 0}
@@ -40,18 +50,30 @@ class Writer:
         try:
             self._queue.put_nowait((table, row))
         except queue.Full:
-            self._spool([(table, row)])
+            # kept for the writer thread to spool in bulk: never a file per row on the caller's thread
+            with self._overflow_lock:
+                self._overflow.append((table, row))
 
     def flush(self, timeout: float) -> bool:
         """Waits until everything put before this call is written or spooled."""
         done = threading.Event()
-        self._queue.put(("flush", done))
-        return done.wait(timeout)
+        started = time.monotonic()
+        try:
+            self._queue.put(("flush", done), timeout=timeout)
+        except queue.Full:
+            return False
+        return done.wait(max(0.0, timeout - (time.monotonic() - started)))
 
     def close(self, timeout: float) -> None:
         self.flush(timeout)
         self._stopping.set()
         self._thread.join(timeout)
+        # whatever the thread could not write in time is spooled, not lost with the process
+        rest = self._drain(self._queue.qsize())
+        with self._overflow_lock:
+            rest, self._overflow = rest + self._overflow, []
+        if rest:
+            self._spool(rest)
 
     def queued(self) -> int:
         return self._queue.qsize()
@@ -61,11 +83,18 @@ class Writer:
             waiting = []
             try:
                 batch, waiting = self._take()
+                with self._overflow_lock:
+                    overflow, self._overflow = self._overflow, []
+                if self._down:
+                    batch += self._drain(SPOOL_ROWS_PER_FILE - len(batch))
                 if batch:
                     self._write_or_spool(batch)
+                if overflow:
+                    self._spool(overflow)
                 if time.monotonic() - self._last_replay >= REPLAY_EVERY_SECONDS:
                     self._last_replay = time.monotonic()
-                    self._replay_spool()
+                    if self._replay_spool() and self._queue.qsize() < self._batch_size:
+                        self._last_replay = 0.0   # more backlog and a quiet queue: carry on next loop
             except Exception:
                 # the thread must outlive any surprise, or recording stops for the process's lifetime
                 logger.exception("activity hub: writer loop error")
@@ -91,13 +120,31 @@ class Writer:
             batch.append((table, item))
         return batch, waiting
 
+    def _drain(self, limit: int) -> list:
+        """Up to limit rows already queued, without waiting; flush waiters seen are released."""
+        rows = []
+        while len(rows) < limit:
+            try:
+                table, item = self._queue.get_nowait()
+            except queue.Empty:
+                break
+            if table == "flush":
+                item.set()
+            else:
+                rows.append((table, item))
+        return rows
+
     def _write_or_spool(self, batch: list) -> None:
+        if self._down:
+            self._spool(batch)
+            return
         try:
             self._write(batch)
         except Exception as e:
             self.stats["write_errors"] += 1
-            logger.warning(f"activity hub: write failed, {len(batch)} row(s) spooled: {e}")
+            logger.warning(f"activity hub: write failed, {len(batch)} row(s) spooled until it is back: {e}")
             self._client = None
+            self._down = True
             self._spool(batch)
 
     def _write(self, batch: list) -> None:
@@ -140,23 +187,34 @@ class Writer:
             with open(temporary, "w") as handle:
                 for table, row in batch:
                     handle.write(json.dumps({"table": table, "row": row}) + "\n")
+                handle.flush()
+                os.fsync(handle.fileno())   # a rename that survives a power cut must not name an empty file
             temporary.rename(name)
             self.stats["spooled"] += len(batch)
         except OSError as e:
             logger.error(f"activity hub: {len(batch)} row(s) lost, spool not writable: {e}")
 
-    def _replay_spool(self) -> None:
-        """Writes spooled files back, oldest first. A file is claimed by renaming it, so writers of
-        several processes sharing the directory never replay the same file twice."""
+    def _replay_spool(self) -> bool:
+        """Writes spooled files back, oldest first, at most REPLAY_FILES_PER_ROUND; True when more are
+        waiting. A file is claimed by renaming it, so writers of several processes sharing the
+        directory never replay the same file twice. A round that gets through ends an outage."""
         now = time.time()
         candidates = sorted(self._spool_dir.glob("*.jsonl")) + [
             path for path in self._spool_dir.glob("*.claimed-*") if now - path.stat().st_mtime > STALE_CLAIM_SECONDS
         ]
-        for path in candidates:
+        if not candidates and self._down:
+            try:
+                self._write([])   # nothing to replay: a plain connect tells whether it is back
+                self._down = False
+            except Exception:
+                self._client = None
+            return False
+        for path in candidates[:REPLAY_FILES_PER_ROUND]:
             spool_name = path.name.split(".", 1)[0] + ".jsonl"
             claimed = path.with_name(spool_name + self._claim_suffix)
             try:
                 path.rename(claimed)
+                os.utime(claimed)
             except OSError:
                 continue
             try:
@@ -171,8 +229,11 @@ class Writer:
                 # rows already written by this attempt are dropped as duplicates next time
                 logger.warning(f"activity hub: replay of {spool_name} failed, kept for later: {e}")
                 self._client = None
+                self._down = True
                 claimed.rename(path.with_name(spool_name))
                 # the database is most likely still down; the rest waits for the next round
-                return
+                return False
             claimed.unlink()
             self.stats["replayed"] += len(batch)
+        self._down = False
+        return len(candidates) > REPLAY_FILES_PER_ROUND

@@ -85,3 +85,65 @@ def test_activity_context_nests_and_forwards():
     with pytest.raises(ValueError, match="unknown context fields"):
         with activity_context(user="x"):
             pass
+
+
+def test_diff_keeps_only_changed_keys():
+    from activity_hub import diff
+    assert diff({"sl": 1.1, "tp": 2}, {"sl": 1.2, "tp": 2}) == {"before": {"sl": 1.1}, "after": {"sl": 1.2}}
+    assert diff({"sl": 1.1}, {"sl": 1.1}) is None
+
+
+def test_about_relates_an_event_and_keeps_the_record_in_metadata():
+    from activity_hub import ActivityHub
+    hub = ActivityHub({}, app="a", environment="e", service="s", enabled=False,
+                      related_columns={"account_number": "account", "ticket_number": "ticket"})
+    fields = hub.describe({"account_number": "100", "ticket_number": "9", "volume": 1},
+                          {"target_type": "ticket", "target_id": "9", "metadata": {"volume": 2}})
+    assert fields["related"] == [("account", "100")]
+    assert fields["metadata"] == {"account_number": "100", "ticket_number": "9", "volume": 2}
+
+
+def test_a_secret_path_parameter_is_masked_in_the_stored_path():
+    from activity_hub.asgi import stored_path
+    scope = {"path": "/reset/abc123/confirm", "path_params": {"token": "abc123"}}
+    assert stored_path(scope) == "/reset/[masked]/confirm"
+    assert stored_path({"path": "/positions/11450", "path_params": {"ticket": "11450"}}) == "/positions/11450"
+
+
+def test_a_body_nested_too_deeply_is_noted_and_the_row_kept():
+    import json
+    from activity_hub.records import access_row
+    deep = json.loads("[" * 1500 + "]" * 1500)
+    row = access_row({}, {}, method="POST", route="/x", path="/x", status=200, duration_ms=1, request_body={"a": deep})
+    assert "nested too deeply" in row["request_body"]
+
+
+def test_about_masks_secrets_in_metadata():
+    from activity_hub import ActivityHub
+    hub = ActivityHub({}, app="a", environment="e", service="s", enabled=False)
+    assert hub.describe({"username": "ann", "password": "p"}, {})["metadata"] == {"username": "ann", "password": "[masked]"}
+
+
+def test_a_public_caller_cannot_choose_its_request_id():
+    from starlette.applications import Starlette
+    from starlette.responses import PlainTextResponse
+    from starlette.routing import Route
+    from starlette.testclient import TestClient
+    from activity_hub.asgi import ActivityMiddleware
+
+    class Hub:
+        def record_access(self, **fields):
+            pass
+    app = Starlette(routes=[Route("/x", lambda request: PlainTextResponse("ok"))])
+    app.add_middleware(ActivityMiddleware, hub=Hub(), trust_forwarded=lambda headers: headers.get("x-key") == "k")
+    client = TestClient(app)
+    assert client.get("/x", headers={"x-request-id": "someone-elses"}).headers["x-request-id"] != "someone-elses"
+    assert client.get("/x", headers={"x-request-id": "r-1", "x-key": "k"}).headers["x-request-id"] == "r-1"
+
+
+def test_csv_cells_a_spreadsheet_would_run_stay_text():
+    from activity_hub.reader import _cell
+    assert _cell("=HYPERLINK(\"x\")") == "'=HYPERLINK(\"x\")"
+    assert _cell("@SUM(A1)") == "'@SUM(A1)"
+    assert _cell("Mozilla/5.0") == "Mozilla/5.0" and _cell(-3) == -3
+    assert _cell({"a": 1}) == '{"a": 1}'

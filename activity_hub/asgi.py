@@ -4,6 +4,7 @@ from urllib.parse import unquote
 from activity_hub.context import _current, FORWARD_HEADERS
 from activity_hub.ids import uuid7
 from activity_hub.logger import logger
+from activity_hub.records import is_secret, MASKED
 
 DEFAULT_SKIP_PATHS = ("/healthz", "/health", "/metrics", "/docs", "/redoc", "/openapi.json", "/favicon.ico")
 # Cloudflare sets this and overwrites any value the caller sent. X-Forwarded-For is not trusted by
@@ -23,6 +24,15 @@ def route_template(scope) -> str:
         return route
     by_value = {str(value): name for name, value in (scope.get("path_params") or {}).items()}
     return "/".join(f"{{{by_value[part]}}}" if part in by_value else part for part in scope["path"].split("/"))
+
+
+def stored_path(scope) -> str:
+    """The path as kept: a path parameter named like a secret (/reset/{token}) is masked."""
+    path = scope["path"]
+    for name, value in (scope.get("path_params") or {}).items():
+        if is_secret(str(name)) and str(value):
+            path = path.replace(str(value), MASKED)
+    return path
 
 
 def _sent(body: dict):
@@ -103,7 +113,7 @@ class ActivityMiddleware:
                     self.hub.record_access(
                         method=scope["method"],
                         route=route_template(scope),
-                        path=scope["path"],
+                        path=stored_path(scope),
                         status=status["code"],
                         duration_ms=round((time.perf_counter() - started) * 1000),
                         request_body=_sent(body) if keep_body else None,
@@ -121,8 +131,10 @@ class ActivityMiddleware:
             "country": headers.get(self.country_header, ""),
             "user_agent": headers.get("user-agent", ""),
             "origin": headers.get(self.origin_header, ""),
-            "request_id": headers.get("x-request-id", "")[:128] or uuid7(),
+            "request_id": uuid7(),
         }
+        # a caller's own request id (and actor, client) is believed only from the application's
+        # services: a public one could reuse another request's id and merge into its records
         if self.trust_forwarded and self.trust_forwarded(headers):
             context.update({field: unquote(headers[header]) for field, header in FORWARD_HEADERS.items() if headers.get(header)})
         return context

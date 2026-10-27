@@ -19,6 +19,9 @@ from activity_hub.logger import logger
 from activity_hub.records import mask_secrets, MAX_JSON_BYTES
 
 PENDING_KEY = "activity_hub_changes"
+# a before-value the session never loaded (the row was expired by an earlier commit and written
+# without being read): unknown, which is not the same as empty
+NOT_LOADED = "[not loaded]"
 ACTION_CREATED = "data.created"
 ACTION_UPDATED = "data.updated"
 ACTION_DELETED = "data.deleted"
@@ -34,7 +37,7 @@ def _change(obj, action: str, related_columns: dict) -> dict | None:
         for column in mapper.column_attrs:
             history = state.attrs[column.key].history
             if history.has_changes():
-                before[column.key] = history.deleted[0] if history.deleted else None
+                before[column.key] = history.deleted[0] if history.deleted else NOT_LOADED
                 after[column.key] = history.added[0] if history.added else None
         if not after:
             return None
@@ -50,31 +53,63 @@ def _change(obj, action: str, related_columns: dict) -> dict | None:
                if state.dict.get(column) not in (None, "")]
     return {
         "action": action,
-        "target_type": mapper.persist_selectable.name,
+        "target_type": mapper.local_table.name,
         "target_id": ":".join(str(value) for value in mapper.primary_key_from_instance(obj)),
         "changes": changes,
         **({"related": related} if related else {}),
     }
 
 
+def snapshot(obj, *columns) -> dict:
+    """A mapped object's column values as plain data (all columns, or the ones named), for
+    record_event(about=...). Only values already in memory are read, so it never queries; take it
+    before a commit, which expires them (and before a delete, after which the row is gone)."""
+    values = inspect(obj).dict
+    keys = columns or [column.key for column in inspect(obj).mapper.column_attrs]
+    return {key: values[key] for key in keys if key in values}
+
+
 def track_changes(hub, *, exclude_tables=(), session_class=Session, related_columns=None) -> None:
     """Starts recording ORM changes for every session of session_class (all sessions by default).
-    Safe to call more than once; recording never raises into the application's commit."""
+    related_columns defaults to the hub's own. Safe to call more than once; recording never raises
+    into the application's commit."""
     if session_class in _tracked:
         return
     _tracked.append(session_class)
     excluded = set(exclude_tables)
+    if related_columns is None:
+        related_columns = getattr(hub, "related_columns", None)
     related_columns = dict(related_columns or {})
+
+    # Pending changes per open transaction: the outermost one, then one per savepoint. A released
+    # savepoint hands its changes to the one around it, a rolled-back one drops them, and only the
+    # outermost commit records anything (SQLAlchemy reports a savepoint's release and rollback as
+    # after_commit / after_rollback too).
+    def stack(session) -> list:
+        return session.info.setdefault(PENDING_KEY, [{"changes": [], "released": False}])
+
+    @event.listens_for(session_class, "after_transaction_create")
+    def open_savepoint(session, transaction):
+        if transaction.nested:
+            stack(session).append({"changes": [], "released": False})
+
+    @event.listens_for(session_class, "after_transaction_end")
+    def close_savepoint(session, transaction):
+        pending = session.info.get(PENDING_KEY)
+        if transaction.nested and pending and len(pending) > 1:
+            closed = pending.pop()
+            if closed["released"]:
+                pending[-1]["changes"].extend(closed["changes"])
 
     @event.listens_for(session_class, "after_flush")
     def collect(session, flush_context):
         # after the flush: primary keys are assigned and each attribute's history is still there
-        pending = session.info.setdefault(PENDING_KEY, [])
+        pending = stack(session)[-1]["changes"]
         for objects, action in ((session.new, ACTION_CREATED), (session.dirty, ACTION_UPDATED),
                                 (session.deleted, ACTION_DELETED)):
             for obj in objects:
                 try:
-                    if inspect(obj).mapper.persist_selectable.name in excluded:
+                    if inspect(obj).mapper.local_table.name in excluded:
                         continue
                     change = _change(obj, action, related_columns)
                     if change:
@@ -84,7 +119,10 @@ def track_changes(hub, *, exclude_tables=(), session_class=Session, related_colu
 
     @event.listens_for(session_class, "after_commit")
     def record(session):
-        for change in session.info.pop(PENDING_KEY, []):
+        if session.in_nested_transaction():
+            stack(session)[-1]["released"] = True
+            return
+        for change in [change for level in session.info.pop(PENDING_KEY, []) for change in level["changes"]]:
             action = change.pop("action")
             try:
                 hub.record_event(action, **change)
@@ -93,4 +131,7 @@ def track_changes(hub, *, exclude_tables=(), session_class=Session, related_colu
 
     @event.listens_for(session_class, "after_rollback")
     def forget(session):
-        session.info.pop(PENDING_KEY, None)
+        if session.in_nested_transaction():
+            stack(session)[-1]["changes"].clear()
+        else:
+            session.info.pop(PENDING_KEY, None)

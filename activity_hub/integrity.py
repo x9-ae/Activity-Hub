@@ -47,9 +47,11 @@ def _window_hashes(client, table: str, columns: str, start: datetime, end: datet
 def seal_new_rows(settings: dict, *, lag_seconds: int = DEFAULT_LAG_SECONDS, until: datetime | None = None) -> int:
     """Seals every complete minute not sealed yet, in each table; returns the number of seals written.
     Run it from one process only, e.g. every minute from a scheduler."""
-    end = _minute(until or datetime.now(timezone.utc) - timedelta(seconds=lag_seconds))
     client = get_client(settings, database=settings["database"])
     try:
+        # the server's clock, which stamps received_at; the app host's may drift
+        now = until or client.query("SELECT now64(3, 'UTC')").result_rows[0][0].replace(tzinfo=timezone.utc)
+        end = _minute(now - timedelta(seconds=0 if until else lag_seconds))
         return sum(_seal_table(client, table, end) for table in SEALED_TABLES)
     finally:
         client.close()
@@ -133,7 +135,10 @@ def _check_table(client, table: str, seals: list) -> list:
             problem("seal altered")
         if previous:
             if window == previous["window_start"]:
-                problem("minute sealed twice")
+                # two sealers overlapping (a rolling deploy) write the same seal twice: harmless
+                if seal["hash"] != previous["hash"]:
+                    problem("minute sealed twice")
+                continue
             elif window != previous["window_start"] + MINUTE:
                 problem(f"seals missing from {_text(previous['window_start'] + MINUTE)}")
             elif seal["prev_hash"] != previous["hash"]:

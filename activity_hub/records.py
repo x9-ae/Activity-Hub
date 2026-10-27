@@ -56,17 +56,26 @@ def _json(name: str, value) -> str:
     return encoded
 
 
-def _is_secret(key: str) -> bool:
+def is_secret(key: str) -> bool:
     return bool(SECRET_KEY.search(key)) and not NOT_SECRET_SUFFIX.search(key)
 
 
 def mask_secrets(value):
     """The value with every secret-looking key's value replaced, recursively."""
     if isinstance(value, dict):
-        return {key: MASKED if _is_secret(str(key)) else mask_secrets(item) for key, item in value.items()}
+        return {key: MASKED if is_secret(str(key)) else mask_secrets(item) for key, item in value.items()}
     if isinstance(value, list):
         return [mask_secrets(item) for item in value]
     return value
+
+
+def diff(before: dict, after: dict) -> dict | None:
+    """{"before": ..., "after": ...} of the keys whose value changed, for an event's changes; None
+    when nothing did."""
+    keys = [key for key in {**before, **after} if str(before.get(key)) != str(after.get(key))]
+    if not keys:
+        return None
+    return {"before": {key: before.get(key) for key in keys}, "after": {key: after.get(key) for key in keys}}
 
 
 def _event_id(value) -> str:
@@ -125,6 +134,9 @@ def _request_body(value) -> str:
         return _json("request_body", mask_secrets(value))
     except ValueError:
         return _json("request_body", {"not_kept": f"body is over {MAX_JSON_BYTES} bytes after masking"})
+    except RecursionError:
+        # a body nested deeper than Python recurses would otherwise lose the whole access row
+        return _json("request_body", {"not_kept": "body is nested too deeply"})
 
 
 def access_row(source: dict, context: dict, *, method: str, route: str, path: str, status: int,
