@@ -13,7 +13,7 @@ behind the package's back.
 ## Install
 
 ```bash
-pip install "activity-hub @ https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.5.0.tar.gz"
+pip install "activity-hub @ https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.5.1.tar.gz"
 ```
 
 (The release archive needs no git on the machine installing it.)
@@ -121,6 +121,9 @@ For each request the middleware:
 - reads the client IP (Cloudflare's `CF-Connecting-IP`), country (`CF-IPCountry`), user agent, app
   (`X-Client-Origin`) and request id (`X-Request-Id`, created when missing and returned on the
   response);
+- uses the application's own request id instead when an outer middleware has already chosen it
+  (`scope["state"]["request_id"]`), and then leaves the `X-Request-Id` header to the application, so a
+  response carries one id and every record matches it;
 - makes them available to every `record_event` during the request;
 - writes one access-log row with the route template (`/positions/{ticket}`), status and duration;
 - for a request that changes something (POST, PUT, PATCH, DELETE) with a JSON body, also keeps what

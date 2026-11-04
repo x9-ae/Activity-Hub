@@ -103,3 +103,34 @@ def test_forwarded_values_are_ascii_and_come_back_as_they_were():
     middleware = ActivityMiddleware(None, hub=None, trust_forwarded=lambda h: True)
     context = middleware._context({"client": ("10.0.0.1", 1)}, received)
     assert (context["actor_name"], context["user_agent"], context["actor_id"]) == (name, agent, "12")
+
+
+class HostRequestId:
+    """An application's own outer middleware that chooses the request id and returns it itself."""
+
+    def __init__(self, app, request_id):
+        self.app, self.request_id = app, request_id
+
+    async def __call__(self, scope, receive, send):
+        scope.setdefault("state", {})["request_id"] = self.request_id
+
+        async def send_with_id(message):
+            if message["type"] == "http.response.start":
+                message["headers"] = [*message.get("headers", []), (b"x-request-id", self.request_id.encode())]
+            await send(message)
+
+        await self.app(scope, receive, send_with_id)
+
+
+@needs_clickhouse
+def test_the_host_applications_request_id_is_used_and_returned_once(settings, tmp_path):
+    hub = ActivityHub(settings, spool_dir=str(tmp_path), **SOURCE)
+    app = build_app(hub)
+    app.add_middleware(HostRequestId, request_id="req_01HOSTCHOSENID0000000000")
+    response = TestClient(app).post("/positions/11450/close")
+    hub.flush()
+
+    assert response.headers.get_list("x-request-id") == ["req_01HOSTCHOSENID0000000000"]
+    assert count(settings, "SELECT count() FROM events WHERE request_id = 'req_01HOSTCHOSENID0000000000'") == 1
+    assert count(settings, "SELECT count() FROM access_logs WHERE request_id = 'req_01HOSTCHOSENID0000000000'") == 1
+    hub.close()

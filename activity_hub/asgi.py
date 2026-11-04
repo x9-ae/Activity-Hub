@@ -50,7 +50,9 @@ def _sent(body: dict):
 class ActivityMiddleware:
     """ASGI middleware (FastAPI, Starlette, any ASGI app). For every HTTP request it opens the
     activity context (IP, country, user agent, origin, request id), echoes X-Request-Id on the
-    response and records one access-log row once the response is sent. For a request that changes
+    response and records one access-log row once the response is sent. When an outer middleware of the
+    application has already chosen the request id (scope["state"]["request_id"]), that id is used and
+    the application, which returns it, keeps the only X-Request-Id header. For a request that changes
     something (POST, PUT, PATCH, DELETE) with a JSON body, the row also keeps what was sent, with
     passwords, tokens and keys masked, so every change is recorded without code per feature.
 
@@ -80,7 +82,8 @@ class ActivityMiddleware:
             return await self.app(scope, receive, send)
         headers = {key.decode("latin-1").lower(): value.decode("latin-1") for key, value in scope["headers"]}
         log_access = not (self.skip_request and self.skip_request(headers))
-        context = self._context(scope, headers)
+        host_request_id = scope.get("state", {}).get("request_id")
+        context = self._context(scope, headers, host_request_id)
         token = _current.set(context)
         request_id = context["request_id"].encode("latin-1")
         status = {"code": 500}
@@ -101,8 +104,9 @@ class ActivityMiddleware:
         async def send_with_request_id(message):
             if message["type"] == "http.response.start":
                 status["code"] = message["status"]
-                message.setdefault("headers", [])
-                message["headers"] = [*message["headers"], (b"x-request-id", request_id)]
+                if not host_request_id:
+                    message.setdefault("headers", [])
+                    message["headers"] = [*message["headers"], (b"x-request-id", request_id)]
             await send(message)
 
         try:
@@ -122,7 +126,7 @@ class ActivityMiddleware:
                 logger.exception("activity hub: access row not recorded")
             _current.reset(token)
 
-    def _context(self, scope, headers: dict) -> dict:
+    def _context(self, scope, headers: dict, host_request_id: str | None = None) -> dict:
         client = scope.get("client")
         ip = next((headers[name].split(",")[0].strip() for name in self.ip_headers if headers.get(name)),
                   client[0] if client else "")
@@ -131,7 +135,7 @@ class ActivityMiddleware:
             "country": headers.get(self.country_header, ""),
             "user_agent": headers.get("user-agent", ""),
             "origin": headers.get(self.origin_header, ""),
-            "request_id": uuid7(),
+            "request_id": host_request_id or uuid7(),
         }
         # a caller's own request id (and actor, client) is believed only from the application's
         # services: a public one could reuse another request's id and merge into its records
