@@ -35,3 +35,20 @@ jobs:
           CLICKHOUSE_PORT: "8123"
           CLICKHOUSE_USER: admin
           CLICKHOUSE_PASSWORD: admin
+
+  viewer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+      # apps install the built viewer from the release archive: the committed build must be this one
+      - run: git diff --exit-code viewer/dist || (echo "viewer/dist is out of date: run npm run build and commit it" && exit 1)

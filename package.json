@@ -1,0 +1,65 @@
+{
+  "name": "activity-hub-viewer",
+  "version": "0.6.0",
+  "description": "The activity log viewer for Activity Hub: React components and an <activity-log> element",
+  "type": "module",
+  "files": [
+    "viewer/dist"
+  ],
+  "main": "./viewer/dist/index.js",
+  "types": "./viewer/dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./viewer/dist/index.d.ts",
+      "import": "./viewer/dist/index.js"
+    },
+    "./style.css": "./viewer/dist/style.css",
+    "./element": {
+      "types": "./viewer/dist/element.d.ts",
+      "import": "./viewer/dist/element.js"
+    }
+  },
+  "sideEffects": [
+    "*.css",
+    "./viewer/dist/element.js"
+  ],
+  "scripts": {
+    "build": "vite build --config viewer/vite.config.ts && vite build --config viewer/vite.element.config.ts && tsc -p viewer/tsconfig.json",
+    "test": "vitest run --config viewer/vite.config.ts",
+    "typecheck": "tsc -p viewer/tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.0",
+    "@types/react": "19.1.8",
+    "@types/react-dom": "19.1.6",
+    "@vitejs/plugin-react": "4.6.0",
+    "jsdom": "26.1.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "typescript": "5.8.3",
+    "vite": "6.3.5",
+    "vitest": "3.2.4"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "element": [
+        "viewer/dist/element.d.ts"
+      ],
+      "*": [
+        "viewer/dist/index.d.ts"
+      ]
+    }
+  }
+}

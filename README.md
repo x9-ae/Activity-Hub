@@ -13,7 +13,7 @@ behind the package's back.
 ## Install
 
 ```bash
-pip install "activity-hub @ https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.5.1.tar.gz"
+pip install "activity-hub @ https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.6.0.tar.gz"
 ```
 
 (The release archive needs no git on the machine installing it.)
@@ -172,13 +172,75 @@ track_changes(hub, exclude_tables=("noisy_table",),
 - Changes made outside the ORM unit of work (Core statements, bulk `query.update`) are not seen.
 - Install with `pip install "activity-hub[sqlalchemy] @ …"`.
 
-## 5. Read
+## 5. What each action means (catalog)
+
+The application declares its actions once, as plain data. The reader uses this to give every record
+a sentence a person reads. The hub uses it to report actions nobody declared.
+
+```python
+from activity_hub import Catalog
+
+CATALOG = Catalog(
+    events={
+        "trade.opened": {"title": "Trade opened", "importance": "normal",
+                         "says": "Opened {side} {volume} {symbol}[ at {price}][ (#{ticket})]"},
+        "balance.added": {"title": {"success": "Balance added", "refused": "Balance not added"},
+                          "says": {"success": "Added {amount} to {on}", "refused": "Refused adding {amount} to {on}"},
+                          "importance": "high"},
+    },
+    entities={"account": "account", "trading_positions": "position record"},
+    fields={"sl": "stop loss"},
+    values={"side": {"1": "BUY", "2": "SELL"}, "margin_level": "{:.2f}"},
+    actor_types={"account": "Client"},
+    actor_names={"system:liquidation": "Stop-out"},
+)
+hub = ActivityHub(settings, ..., catalog=CATALOG)
+reader = ActivityReader(settings, catalog=CATALOG)
+```
+
+**An event entry has these keys:**
+- **`title`:** a short name, or one per outcome.
+- **`says`:** the sentence, or one per outcome. A sentence names values in `{braces}`: any field of
+  the event or key of its metadata. It can also use these values, which every event has:
+
+  | Value | What it holds |
+  |---|---|
+  | `{actor}` | who acted |
+  | `{on}` | what it was done to ("account 100234") |
+  | `{target}` | the kind of thing |
+  | `{changed}` | the changed fields' names |
+  | `{changes}` | the changes with their before and after values |
+
+  A part in `[brackets]` is said only when every value in it is known. A refusal or failure with no
+  sentence of its own is said with its reason.
+- **`importance`:** `high` for money and security, `normal` (the default), or `low` for details,
+  which are left out of the default view. `importance_for` sets a different importance per actor
+  type.
+- **`fold`:** marks a side effect of its request, shown inside the request's main event.
+
+**The other arguments:**
+- `entities` names kinds of things.
+- `fields` names values.
+- `values` says a field's codes or formats its numbers.
+- `actor_types` and `actor_names` name who acted.
+
+**The package declares the general actions:**
+- sign-in and sign-out, password changes and reset requests;
+- `activity.exported` and `activity.searched`;
+- `data.created`, `data.updated` and `data.deleted`. These are low importance and folded. Staff and
+  API-key changes are normal importance.
+
+An action that is not declared still reads, from its name.
+
+## 6. Read
 
 ```python
 from activity_hub import ActivityReader
 
-reader = ActivityReader(settings)
+reader = ActivityReader(settings, catalog=CATALOG)
 page = reader.search_events(actor_id="12", action="trade.", occurred_from="2026-10-01", limit=50)
+page = reader.search_events(view="important", tenant_id="3")   # what a person looks at first
+page = reader.search_events(query='actor:12 action:trade.* -result:success "stop loss"')
 page = reader.search_events(cursor=page["next_cursor"])    # next page, same filters
 reader.timeline("account", "100234")                       # the account and everything related to it
 reader.search_access_logs(status_from=400, service="trading_service")
@@ -189,12 +251,173 @@ for chunk in reader.export_events_csv(tenant_id="3"):      # stream to a downloa
 ```
 
 - Results come newest first. Times are UTC, written `YYYY-MM-DD HH:MM:SS.mmm`.
+- **Readable fields.** Every event also carries what a person reads, from the catalog:
+  - `title` and `summary` (the sentence);
+  - `importance`;
+  - `actor` and `actor_label`;
+  - `device` ("Chrome 157 on macOS");
+  - `change_list`: a list of field, label, before and after.
+- **The search language.** `query` works on every read: the lists, the charts, the counts and the
+  exports.
+
+  | Term | Matches |
+  |---|---|
+  | `field:value` | that value |
+  | several values of one field | any of them |
+  | `-field:value` | everything without that value |
+  | `action:trade.*` or `route:/trading/*` | a prefix |
+  | `on:account:100234` | an entity's timeline |
+  | `status:4xx` | a range of HTTP statuses |
+  | any other word, or `"words"` | that text in who, the target, the reason, the IP, the details and the changes |
+
+  The fields are:
+  - events: `actor` (id or name), `actor_type`, `action`, `category`, `result`, `on`, `ip`,
+    `country`, `app`, `service`, `request`, `session`;
+  - API requests: `actor`, `actor_type`, `method`, `route`, `status`, `ip`, `country`, `app`,
+    `service`, `request`, `session`.
+
+  An unknown field, or more than 20 terms, is a `ValueError`.
+- **Views.** `view` chooses which records are listed:
+
+  | View | Lists |
+  |---|---|
+  | `None` | every record as stored (the default) |
+  | `"all"` | every record |
+  | `"important"` | leaves out low-importance records; failures and refusals always stay |
+  | `"problems"` | only failures and refusals |
+
+  With any view, each request's row changes are listed under the event that caused them, in
+  `children` (the first 100; `children_count` has the number), and not on their own. This includes changes the view itself leaves out. They are read
+  in one query per page, under the same app and tenant. A request with no event of its own keeps
+  its first change and lists the others under it. The charts and counts take `view` too, and count
+  records.
 - A timeline (`related=` / `timeline`) reads by `related_keys`, every `type:id` the event concerns
   (target and related), which has its own index: only the blocks holding that key are read.
 - Pages hold up to 5000 rows. The cursor stays stable while new rows keep arriving.
 - Reading the log is itself worth recording: call `record_event("activity.searched", ...)`.
 
-## 6. Integrity
+## 7. Read API (FastAPI)
+
+Every viewer talks to the same routes, so an application only decides who may read what:
+
+```python
+from activity_hub.api import activity_router
+
+def can_read(user=Depends(current_user)):          # the application's own sign-in
+    if not user.may("activity", "read"):
+        raise HTTPException(403)
+    return {"filters": {"tenant_id": user.company_id}}   # added to every read; {} for everything
+
+app.include_router(activity_router(get_reader=lambda: reader, authorize=can_read,
+                                   authorize_export=can_export, record=hub.record_event,
+                                   status=lambda: {"recording": hub.stats()}), prefix="/activity")
+```
+
+| Route | Answers |
+|---|---|
+| `POST /search` | A page of events or API requests, with `view`, `query` (the search language), filters, `action`, a timeline (`related_type` + `related_id`), times and `cursor` |
+| `POST /chart` | Counts per period for the same search; the bar widens with the range (15 min, 1 h, 6 h, 1 day) |
+| `POST /values` | Each value of one field with its count, for pickers |
+| `POST /export` | One export page of up to 5000 rows: the view's records, each a row of its own. Each page is recorded as `activity.exported` |
+| `GET /events/{id}` | One event, with the other events and the API calls of the same request |
+| `GET /catalog` | Every declared action's title and importance, the actor types and the entity kinds |
+| `GET /status` | Until when each table is sealed, whether the caller may run the checks, plus the application's own figures |
+| `POST /integrity/verify` | Every record of one UTC day (`{"day": "2026-11-09"}`) checked against its seals: `ok`, the records and seals checked, the problems |
+| `GET /integrity/seal/{day}` | The day's proof, to keep outside the database |
+| `POST /integrity/check` | A kept proof (`{"record": …}`) compared with the database: catches a rewrite of records and seals together |
+
+- **Saved views:**
+  - `GET /views` lists the caller's own views and those shared in their tenant;
+  - `POST /views` saves one (`id` updates one of the caller's own);
+  - `DELETE /views/{id}` removes one of the caller's own.
+
+  They need `"viewer": {"id", "name"}` in the scope; without it, `GET /views` answers
+  `{"enabled": false}`. Views are kept in the Hub's `views` table. They are settings, not records:
+  they are not sealed.
+- **Customer-facing logs.** The scope can also hold:
+  - `"kinds": ["events"]`, which leaves the API access log out (403 for `kind: requests`);
+  - `"hide": [...]`, fields taken out of every record answered, at any depth.
+
+  A trader's own log is, for example,
+  `{"filters": {"actor_id": "100234"}, "kinds": ["events"], "hide": ["service", "tenant_id", "request_id"]}`.
+- **`activity_router` options.** `parts=` mounts only some groups: `search`, `chart`, `values`,
+  `export`, `event`, `catalog`, `views`, `integrity` and `status`. `respond=` turns every answer
+  into the application's own envelope.
+- **The integrity checks** cover every tenant's records. A caller whose scope has filters gets
+  403. `authorize_checks` decides who else may run them; without it, the export permission does.
+- **The scope wins.** A filter in the scope overrides the same filter sent by the caller. It also
+  limits the rows folded under an event and the rows an event's detail shows.
+- **Errors:**
+  - an unknown filter is 422, and a wrong one or a broken cursor is 400;
+  - an event outside the scope is 404;
+  - a database that does not answer is 503.
+- **Install:** `pip install "activity-hub[api] @ …"`.
+
+## 8. Viewer (React, or any page)
+
+The same repository ships the viewer every application shows: the log, an entity's timeline and a
+record's detail. It reads the routes above and nothing else.
+
+```bash
+npm install "https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.6.0.tar.gz"
+```
+
+```tsx
+import { ActivityLog, ActivityTimeline } from "activity-hub-viewer"
+import "activity-hub-viewer/style.css"
+
+// the application's own sign-in and base path (GET, POST and DELETE); reject with an Error a person can read
+const request = (path, { method, body }) => apiFetch(`/activity/${path}`, { method, body })
+
+<ActivityLog request={request} canExport presets={[{ label: "Money", search: { filters: { category: ["balance"] } } }]} />
+<ActivityTimeline request={request} entity={{ type: "ticket", id: "32101" }} />
+```
+
+**What the components do:**
+- **`ActivityLog`** (the full page):
+  - one search box for the search language: it offers fields, then their values, while typing;
+    "Add" buttons write a field in; every term shows as a removable chip;
+  - saved views (personal or shared) and a column chooser;
+  - the integrity strip, and a seal mark on every row, sealed or waiting for its minute's seal. For
+    those allowed, it can check a day, download the day's proof, and check a kept proof.
+  - views: Important, All and Problems;
+  - the application's presets;
+  - filters, with the applied ones shown as chips;
+  - time ranges, a chart, live updates, CSV and JSON Lines export, and the integrity strip;
+  - a detail panel with the record's changes, details, request, origin and raw JSON.
+
+  To keep its search in the address, pass `params` and `onParamsChange`. For one entity's page,
+  pass `entity`.
+- **`ActivityTimeline`** (one entity's story, oldest first): pass `action` and `newestFirst` for a
+  feed such as sign-ins.
+- **`PanelHost`**: inside a modal sheet or dialog, provide an element in it, so the detail panel
+  opens there.
+
+**Other pages.** Pages that are not React (Angular, plain HTML) load
+`activity-hub-viewer/element`; React is bundled in it, so such a page needs no React of its own. It defines `<activity-log>` and `<activity-timeline>`, with React
+and the styles inside a shadow root. Set the element's `request` property. The attributes are:
+- `entity-type` and `entity-id`;
+- `action` and `newest-first` for a timeline feed;
+- `kinds`, `can-export` and `no-status` for the log.
+
+The element runs in the browser only, so a page with a server render imports it there.
+
+**Theming.** Colours follow the page's shadcn variables (`--background`, `--foreground`, `--muted`,
+`--muted-foreground`, `--border`, `--primary`, `--radius`). A page with other names sets these on
+`.ahv` instead:
+- `--activity-bg`, `--activity-fg`, `--activity-muted`, `--activity-subtle`, `--activity-line`;
+- `--activity-main`, `--activity-main-fg`;
+- `--activity-bad`, `--activity-warn`, `--activity-ok`, `--activity-attention`;
+- `--activity-radius`, `--activity-mono-font`.
+
+**Development.** `npm ci`, then:
+
+| Command | Does |
+|---|---|
+| `npm test` | Runs the viewer tests |
+| `npm run build` | Writes `viewer/dist`. Commit it: the release archive is what applications install, and CI fails when it is out of date |
+
+## 9. Integrity
 
 ```python
 from activity_hub import seal_new_rows, verify, daily_seal, check_daily_seal
