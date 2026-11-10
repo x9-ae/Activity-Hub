@@ -93,17 +93,29 @@ def _seal_table(client, table: str, end: datetime) -> int:
 def verify(settings: dict, *, table: str | None = None, window_from: datetime | None = None,
            window_to: datetime | None = None) -> dict:
     """Recomputes the sealed minutes from the rows and checks the chain between them.
-    Returns {"ok", "checked", "problems": [{table, window_start, problem}]}."""
+    Returns {"ok", "checked" (seals), "rows" (the records they cover), "problems": [{table, window_start, problem}]}.
+
+    With a window (a day), every minute of it is looked at, not only those its seals name, and its
+    first and last seals are chained to the seals just outside it: seals removed at the window's start
+    or end, or all of them, show too."""
     client = get_client(settings, database=settings["database"])
-    problems, checked = [], 0
+    problems, checked, rows = [], 0, 0
     try:
+        # the window ends where sealing has got to: the server's clock, less the sealer's lag
+        now = client.query("SELECT now64(3, 'UTC')").result_rows[0][0].replace(tzinfo=timezone.utc)
+        sealable = _minute(now - timedelta(seconds=DEFAULT_LAG_SECONDS))
         for name in (table,) if table else SEALED_TABLES:
             seals = _seals(client, name, window_from, window_to)
             checked += len(seals)
-            problems += _check_table(client, name, seals)
+            rows += sum(seal["row_count"] for seal in seals)
+            if window_from or window_to:
+                end = min(_minute(window_to), sealable) if window_to else sealable
+                problems += _check_window(client, name, seals, _minute(window_from) if window_from else None, end)
+            else:
+                problems += _check_table(client, name, seals)
     finally:
         client.close()
-    return {"ok": not problems, "checked": checked, "problems": problems}
+    return {"ok": not problems, "checked": checked, "rows": rows, "problems": problems}
 
 
 def _seals(client, table: str, window_from, window_to) -> list:
@@ -119,6 +131,82 @@ def _seals(client, table: str, window_from, window_to) -> list:
         parameters=parameters,
     )
     return [{**dict(zip(SEAL_COLUMNS, row)), "window_start": _minute(row[1])} for row in result.result_rows]
+
+
+def _neighbour(client, table: str, moment: datetime, side: str) -> dict | None:
+    """The last seal before moment (side "before") or the first at or after it ("after")."""
+    compare, order = ("<", "DESC") if side == "before" else (">=", "ASC")
+    result = client.query(
+        f"SELECT {', '.join(SEAL_COLUMNS)} FROM seals WHERE table_name = {{table:String}} "
+        f"AND window_start {compare} {{moment:DateTime('UTC')}} ORDER BY window_start {order} LIMIT 1",
+        parameters={"table": table, "moment": moment})
+    row = result.first_row if result.result_rows else None
+    return {**dict(zip(SEAL_COLUMNS, row)), "window_start": _minute(row[1])} if row else None
+
+
+def _hashes_by_hour(client, table: str, columns: str, start: datetime, end: datetime) -> dict:
+    """_window_hashes an hour at a time: a busy day in one query outlasts the client's timeout."""
+    found, cursor = {}, start
+    while cursor < end:
+        step = min(cursor + timedelta(hours=1), end)
+        found.update(_window_hashes(client, table, columns, cursor, step))
+        cursor = step
+    return found
+
+
+def _check_window(client, table: str, seals: list, start: datetime | None, end: datetime) -> list:
+    """The minutes from start to end: each sealed minute against its rows, rows in minutes with no
+    seal, the chain from the seal before the window to the seal after it, and gaps of over an hour
+    (an hourly checkpoint is written, rows or not) wherever they fall."""
+    if seals:   # a seal written ahead of the lag still covers its minute
+        end = max(end, seals[-1]["window_start"] + MINUTE)
+    before = _neighbour(client, table, start, "before") if start else None
+    after = _neighbour(client, table, end, "after")
+    begin = start or (seals[0]["window_start"] if seals else end)
+    problems = []
+
+    def problem(window, text):
+        problems.append({"table": table, "window_start": _text(window), "problem": text})
+
+    if begin < end:
+        by_columns = {}
+        for seal in seals:
+            by_columns.setdefault(seal["columns"], []).append(seal)
+        current = _columns(table)
+        actual = {columns: _hashes_by_hour(client, table, columns, begin, end) for columns in {*by_columns, current}}
+        for seal in seals:
+            found = actual[seal["columns"]].get(seal["window_start"], (0, EMPTY_ROWS_HASH))
+            if found != (seal["row_count"], seal["rows_hash"]):
+                problem(seal["window_start"], f"rows changed: sealed {seal['row_count']} row(s), now {found[0]}")
+        sealed = {seal["window_start"] for seal in seals}
+        for window in sorted(set(actual[current]) - sealed):
+            problem(window, "rows in a minute with no seal")
+
+    previous = before
+    for seal in seals:
+        window = seal["window_start"]
+        if _chain(seal["prev_hash"], table, window, seal["row_count"], seal["rows_hash"], seal["columns"]) != seal["hash"]:
+            problem(window, "seal altered")
+        if previous:
+            if window == previous["window_start"]:
+                if seal["hash"] != previous["hash"]:
+                    problem(window, "minute sealed twice")
+                continue
+            if window - previous["window_start"] > timedelta(hours=1):
+                problem(previous["window_start"] + MINUTE, f"seals missing from {_text(previous['window_start'] + MINUTE)}")
+            elif seal["prev_hash"] != previous["hash"]:
+                problem(window, "chain broken")
+        previous = seal
+    # from the last seal in the window to the first one after it, or to where sealing has got to;
+    # with no seal before or in the window the log had not started (removed rows' seals show above)
+    last = previous["window_start"] if previous else None
+    if last is not None:
+        reach = after["window_start"] if after else end
+        if reach - last > timedelta(hours=1) + MINUTE:
+            problem(last + MINUTE, f"seals missing from {_text(last + MINUTE)}")
+        elif after and previous and after["prev_hash"] != previous["hash"] and after["window_start"] != previous["window_start"]:
+            problem(after["window_start"], "chain broken after this day")
+    return problems
 
 
 def _check_table(client, table: str, seals: list) -> list:

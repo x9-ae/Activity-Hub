@@ -2,6 +2,7 @@ import atexit
 import tempfile
 from pathlib import Path
 from activity_hub.context import current_context
+from activity_hub.logger import logger
 from activity_hub.records import EVENTS_TABLE, ACCESS_TABLE, event_row, access_row, mask_secrets
 from activity_hub.writer import Writer
 
@@ -16,12 +17,16 @@ class ActivityHub:
     settings: host, port, database, user, password (the Hub's append-only user).
     related_columns: columns naming an entity, e.g. {"account_number": "account"}; an event's `about`
     row and a tracked data change holding one is related to that entity.
+    catalog: the application's Catalog; an action it does not declare, or an event missing a value its
+    sentence needs, is logged once (the event is still recorded).
     """
 
     def __init__(self, settings: dict, *, app: str, environment: str, service: str, enabled: bool = True,
                  spool_dir: str | None = None, batch_size: int = 200, flush_interval: float = 1.0,
-                 max_queue: int = 100_000, related_columns: dict | None = None):
+                 max_queue: int = 100_000, related_columns: dict | None = None, catalog=None):
         self.enabled = enabled
+        self.catalog = catalog
+        self._reported = set()
         self.related_columns = dict(related_columns or {})
         self._source = {"app": app, "environment": environment, "service": service}
         self._writer = None
@@ -46,10 +51,22 @@ class ActivityHub:
         """
         if about:
             fields = {**fields, **self.describe(about, fields)}
+        if self.catalog is not None:
+            self._check(action, fields)
         row = event_row(self._source, current_context(), action=action, **fields)
         if self._writer:
             self._writer.put(EVENTS_TABLE, row)
         return row["id"]
+
+    def _check(self, action: str, fields: dict) -> None:
+        known = {key for key, value in fields.items() if value not in (None, "", [], {})}
+        metadata = fields.get("metadata")
+        if isinstance(metadata, dict):
+            known |= {key for key, value in metadata.items() if value not in (None, "", [], {})}
+        for problem in self.catalog.problems(action, fields.get("outcome") or "success", known):
+            if problem not in self._reported:
+                self._reported.add(problem)
+                logger.warning(f"activity hub: {problem}; recorded as it is")
 
     def describe(self, about: dict, fields: dict) -> dict:
         """The related entities and metadata an event gets from the record it is about."""
