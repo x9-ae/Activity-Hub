@@ -70,6 +70,24 @@
 .ahv-hidden { display: none; }
 .ahv-disabled { opacity: .55; pointer-events: none; }
 label.ahv-button { cursor: pointer; }
+.ahv-streams { display: grid; gap: 12px; padding: 12px 20px 16px; border-bottom: 1px solid var(--ahv-line); }
+.ahv-streams .ahv-bar > p { margin: 0; flex: 1 1 320px; max-width: 70ch; }
+.ahv-stream-list { margin: 0; padding: 0; list-style: none; display: grid; border: 1px solid var(--ahv-line); border-radius: var(--ahv-radius); }
+.ahv-stream-list li { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) 230px 250px; align-items: center; gap: 6px 16px; padding: 10px 14px; }
+.ahv-stream-list li + li { border-top: 1px solid var(--ahv-line); }
+.ahv-stream-list li > .ahv-bad { grid-column: 1 / -1; }
+.ahv-stream-main { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
+.ahv-stream-where { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ahv-stream-tools { display: flex; align-items: center; gap: 6px; justify-self: end; }
+.ahv-stream-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; max-width: 760px; }
+.ahv-stream-form .ahv-segment { justify-self: start; }
+.ahv-textarea { height: auto; padding: 8px 10px; resize: vertical; }
+@media (max-width: 720px) {
+  .ahv-stream-list li { grid-template-columns: minmax(0, 1fr); }
+  .ahv-stream-tools { justify-self: start; flex-wrap: wrap; }
+  .ahv-stream-form { grid-template-columns: minmax(0, 1fr); }
+  .ahv-stream-form .ahv-field-wide { grid-column: auto; }
+}
 .ahv-verdict { display: grid; gap: 6px; padding: 10px 12px; font-size: 12.5px; border-radius: var(--ahv-radius); border: 1px solid; }
 .ahv-verdict ul { margin: 0; padding-left: 18px; display: grid; gap: 2px; }
 .ahv-verdict-ok { color: var(--ahv-ok); border-color: color-mix(in srgb, var(--ahv-ok) 35%, transparent); background: color-mix(in srgb, var(--ahv-ok) 6%, transparent); }
@@ -234,6 +252,7 @@ label.ahv-button { cursor: pointer; }
   flex: none; display: inline-flex; align-items: center; gap: 3px; padding: 1px 6px; font-size: 11px; color: var(--ahv-muted);
   border: 1px solid var(--ahv-line); border-radius: 999px; font-variant-numeric: tabular-nums;
 }
+.ahv-count-bad { color: var(--ahv-main-fg); background: var(--ahv-bad); border-color: var(--ahv-bad); }
 .ahv-where { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
 .ahv-tag {
   display: inline-flex; align-items: center; height: 20px; padding: 0 7px; font-size: 11px; font-weight: 500; white-space: nowrap;

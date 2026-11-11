@@ -16,6 +16,7 @@ declare const PATHS: {
     readonly copy: "M8 8h12v12H8zM16 8V4H4v12h4";
     readonly check: "M20 6 9 17l-5-5";
     readonly log: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01";
+    readonly send: "M14.5 21.7a.5.5 0 0 0 .9 0L22 2.6a.5.5 0 0 0-.6-.6L2.3 8.6a.5.5 0 0 0 0 .9l8 3.2a2 2 0 0 1 1 1zM21.9 2.1 10.9 13.1";
     readonly shield: "M20 13c0 5-3.5 7.5-7.7 9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z";
 };
 export type IconName = keyof typeof PATHS;

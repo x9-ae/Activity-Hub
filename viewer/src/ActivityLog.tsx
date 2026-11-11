@@ -11,6 +11,7 @@ import { ActivityDetail } from "./ActivityDetail"
 import { IntegrityStatus, sealState, type Status } from "./IntegrityStatus"
 import { SearchBox } from "./SearchBox"
 import { ColumnsMenu, Popover, ViewsMenu, type Column } from "./Menus"
+import { Streams, type StreamList } from "./Streams"
 import { CallLine, EventLine, Message, OutcomeTag, Skeleton, When, Where, Who, cx } from "./parts"
 
 const VIEWS: { value: View; label: string; hint: string }[] = [
@@ -171,6 +172,9 @@ export function ActivityLog({
   const catalog = useRemote<Catalog>("catalog", () => request("catalog", { method: "GET" }))
   // how far the record is sealed: the strip, and each row's seal mark
   const status = useRemote<Status>(showStatus ? "status" : null, () => request("status", { method: "GET" }), 60_000)
+  // streams are offered to those who may export, while the application keeps them
+  const streams = useRemote<StreamList>(canExport && !entity ? "streams" : null, () => request("streams", { method: "GET" }), 60_000)
+  const [streamsOpen, setStreamsOpen] = useState(false)
   const sealOf = (row: Row) => sealState(row.received_at, isEvent(row) ? "events" : "access_logs", status.data)
   // the values seen in this search, offered while typing app: and service:
   const facet = (field: string) => () =>
@@ -313,6 +317,13 @@ export function ActivityLog({
               <button type="button" role="menuitem" onClick={() => exportAs("jsonl")}>JSON Lines, for other tools</button>
             </Popover>
           )}
+          {streams.data?.enabled && (
+            <button type="button" className="ahv-button" aria-expanded={streamsOpen} onClick={() => setStreamsOpen((o) => !o)}
+              title="Send the log to your own systems as it is written">
+              <Icon name="send" size={14} />Streams
+              {streams.data.streams.some((s) => s.state === "failing") && <span className="ahv-count ahv-count-bad">!</span>}
+            </button>
+          )}
           <button type="button" className={cx("ahv-button", live && "ahv-button-live")} aria-pressed={live}
             title="Check for new activity every few seconds" onClick={() => setLive((on) => !on)}>
             <Icon name="live" size={14} className={cx(live && "ahv-pulse")} />{live ? "Live" : "Go live"}
@@ -323,6 +334,9 @@ export function ActivityLog({
           </button>
         </div>
       </header>
+      {streamsOpen && streams.data?.enabled && (
+        <Streams request={request} kinds={kinds} list={streams.data} refresh={streams.refresh} />
+      )}
       {showStatus && !entity && <IntegrityStatus request={request} status={status.data} />}
 
       <div className="ahv-filters">
