@@ -12030,7 +12030,7 @@ function ip({ event: c, onOpen: o }) {
           /* @__PURE__ */ u.jsx("span", { className: "ahv-dim", children: ar(c.occurred_at) || $l(He(c.occurred_at)) })
         ] })
       ] }),
-      c.outcome !== "success" ? /* @__PURE__ */ u.jsx("p", { className: "ahv-step-problem", children: c.summary }) : (w = c.facts) != null && w.length ? /* @__PURE__ */ u.jsx(Eh, { facts: c.facts }) : c.summary !== c.title ? /* @__PURE__ */ u.jsx("p", { className: "ahv-sentence", children: c.summary }) : null,
+      c.outcome !== "success" ? /* @__PURE__ */ u.jsx("p", { className: "ahv-step-problem", children: c.summary }) : (w = c.facts) != null && w.length ? /* @__PURE__ */ u.jsx(Eh, { facts: c.facts }) : !E && c.summary !== c.title ? /* @__PURE__ */ u.jsx("p", { className: "ahv-sentence", children: c.summary }) : null,
       E && /* @__PURE__ */ u.jsx(ir, { changes: E, valueLabel: "Set to" }),
       b && /* @__PURE__ */ u.jsxs("button", { type: "button", className: "ahv-disclose", "aria-expanded": h, onClick: () => f((k) => !k), children: [
         /* @__PURE__ */ u.jsx(jt, { name: "chevronDown", size: 13, className: zt(h && "ahv-turned") }),
@@ -12046,7 +12046,14 @@ function ip({ event: c, onOpen: o }) {
 function up({ event: c }) {
   return /* @__PURE__ */ u.jsxs("span", { className: "ahv-byline", children: [
     /* @__PURE__ */ u.jsx("span", { className: zt("ahv-avatar ahv-avatar-small", c.actor_type === "system" && "ahv-avatar-system"), "aria-hidden": "true", children: bh(c.actor) }),
-    [c.actor, c.actor_label, c.origin && fe(c.origin).toUpperCase(), c.device, c.country, c.ip].filter(Boolean).map((o, h) => /* @__PURE__ */ u.jsx("span", { className: zt(h === 0 ? "ahv-strong" : "ahv-sep"), children: o }, h))
+    [
+      c.actor,
+      c.actor_label,
+      c.origin && fe(c.origin).toUpperCase(),
+      c.actor_type !== "system" && c.device,
+      c.country,
+      c.ip
+    ].filter(Boolean).map((o, h) => /* @__PURE__ */ u.jsx("span", { className: zt(h === 0 ? "ahv-strong" : "ahv-sep"), children: o }, h))
   ] });
 }
 function cp({ records: c, counted: o, onOpen: h }) {

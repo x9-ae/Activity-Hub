@@ -13,7 +13,7 @@ behind the package's back.
 ## Install
 
 ```bash
-pip install "activity-hub @ https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.8.0.tar.gz"
+pip install "activity-hub @ https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.8.1.tar.gz"
 ```
 
 (The release archive needs no git on the machine installing it.)
@@ -374,7 +374,7 @@ The same repository ships the viewer every application shows: the log, an entity
 record's detail. It reads the routes above and nothing else.
 
 ```bash
-npm install "https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.8.0.tar.gz"
+npm install "https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.8.1.tar.gz"
 ```
 
 ```tsx

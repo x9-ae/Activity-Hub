@@ -1806,7 +1806,7 @@ function hn({ event: e, onOpen: a }) {
           /* @__PURE__ */ t("span", { className: "ahv-dim", children: Fe(e.occurred_at) || ee(W(e.occurred_at)) })
         ] })
       ] }),
-      e.outcome !== "success" ? /* @__PURE__ */ t("p", { className: "ahv-step-problem", children: e.summary }) : (v = e.facts) != null && v.length ? /* @__PURE__ */ t(Dt, { facts: e.facts }) : e.summary !== e.title ? /* @__PURE__ */ t("p", { className: "ahv-sentence", children: e.summary }) : null,
+      e.outcome !== "success" ? /* @__PURE__ */ t("p", { className: "ahv-step-problem", children: e.summary }) : (v = e.facts) != null && v.length ? /* @__PURE__ */ t(Dt, { facts: e.facts }) : !h && e.summary !== e.title ? /* @__PURE__ */ t("p", { className: "ahv-sentence", children: e.summary }) : null,
       h && /* @__PURE__ */ t(Ve, { changes: h, valueLabel: "Set to" }),
       b && /* @__PURE__ */ n("button", { type: "button", className: "ahv-disclose", "aria-expanded": s, onClick: () => i((p) => !p), children: [
         /* @__PURE__ */ t(O, { name: "chevronDown", size: 13, className: L(s && "ahv-turned") }),
@@ -1822,7 +1822,14 @@ function hn({ event: e, onOpen: a }) {
 function un({ event: e }) {
   return /* @__PURE__ */ n("span", { className: "ahv-byline", children: [
     /* @__PURE__ */ t("span", { className: L("ahv-avatar ahv-avatar-small", e.actor_type === "system" && "ahv-avatar-system"), "aria-hidden": "true", children: Ot(e.actor) }),
-    [e.actor, e.actor_label, e.origin && A(e.origin).toUpperCase(), e.device, e.country, e.ip].filter(Boolean).map((a, s) => /* @__PURE__ */ t("span", { className: L(s === 0 ? "ahv-strong" : "ahv-sep"), children: a }, s))
+    [
+      e.actor,
+      e.actor_label,
+      e.origin && A(e.origin).toUpperCase(),
+      e.actor_type !== "system" && e.device,
+      e.country,
+      e.ip
+    ].filter(Boolean).map((a, s) => /* @__PURE__ */ t("span", { className: L(s === 0 ? "ahv-strong" : "ahv-sep"), children: a }, s))
   ] });
 }
 function mn({ records: e, counted: a, onOpen: s }) {

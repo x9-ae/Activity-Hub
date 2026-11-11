@@ -96,7 +96,7 @@ function Step({ event, onOpen }: { event: ActivityEvent; onOpen: () => void }) {
         {event.outcome !== "success" ? (
           <p className="ahv-step-problem">{event.summary}</p>
         ) : event.facts?.length ? <Facts facts={event.facts} />
-          : event.summary !== event.title ? <p className="ahv-sentence">{event.summary}</p> : null}
+          : !edited && event.summary !== event.title ? <p className="ahv-sentence">{event.summary}</p> : null}
         {edited && <ChangeTable changes={edited} valueLabel="Set to" />}
         {hasMore && (
           <button type="button" className="ahv-disclose" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
@@ -123,7 +123,8 @@ function ByLine({ event }: { event: ActivityEvent }) {
       <span className={cx("ahv-avatar ahv-avatar-small", event.actor_type === "system" && "ahv-avatar-system")} aria-hidden="true">
         {initials(event.actor)}
       </span>
-      {[event.actor, event.actor_label, event.origin && words(event.origin).toUpperCase(), event.device, event.country, event.ip]
+      {[event.actor, event.actor_label, event.origin && words(event.origin).toUpperCase(),
+        event.actor_type !== "system" && event.device, event.country, event.ip]
         .filter(Boolean).map((part, i) => <span key={i} className={cx(i === 0 ? "ahv-strong" : "ahv-sep")}>{part}</span>)}
     </span>
   )
