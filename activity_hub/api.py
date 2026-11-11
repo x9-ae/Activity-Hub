@@ -33,6 +33,7 @@ from activity_hub.logger import logger
 from activity_hub.reader import MAX_PAGE_SIZE, EVENT_FILTERS, ACCESS_FILTERS, MAX_VIEW_NAME, MAX_VIEW_SEARCH
 from activity_hub.query import MAX_QUERY_LENGTH
 from activity_hub import query as search_language
+from activity_hub.records import EVENT_COLUMNS, ACCESS_COLUMNS
 
 # rows one list page may ask for; an export reads MAX_PAGE_SIZE per page
 MAX_LIST_SIZE = 500
@@ -184,7 +185,8 @@ def _refuse_hidden(search: Search, scope) -> None:
              "target_id": search.related_id, "target_type": search.related_type, "related": search.related_id}
     hidden += [field for field, value in asked.items() if value is not None and field in hide]
     for field, _value, _negated in search_language.parse(search.query or "", search.kind):
-        if field is None and hide & set(search_language.TEXT_COLUMNS[search.kind]):
+        # free text reads the details and changes too: a hidden column, or a hidden key inside them
+        if field is None and hide & (set(search_language.TEXT_COLUMNS[search.kind]) | (hide - COLUMNS)):
             raise ValueError("free-text search is not available here: search by field, e.g. action:trade.*")
         column = search_language.FIELDS[search.kind].get(field)
         if column and hide & ({"actor_id", "actor_name"} if column == "actor" else {column}):
@@ -228,6 +230,11 @@ def _allowed(scope, kind: str) -> None:
         raise HTTPException(status_code=403, detail=f"The {kind} of the log are not available here")
 
 
+# the record's own columns and what the reader adds; any other hidden name is a key inside details and changes
+COLUMNS = {*EVENT_COLUMNS, *ACCESS_COLUMNS, "title", "summary", "facts", "details", "change_list", "children",
+           "children_count", "actor", "actor_label", "device", "importance", "icon", "tone"}
+
+
 def _hidden(scope, value):
     """The answer without the fields the scope hides, at any depth (children, the same request)."""
     hide = set((scope or {}).get("hide") or ())
@@ -240,7 +247,8 @@ def _hidden(scope, value):
 
     def strip(item):
         if isinstance(item, list):
-            return [strip(x) for x in item]
+            # a labelled list (details, change_list) names its field in each entry
+            return [strip(x) for x in item if not (isinstance(x, dict) and x.get("field") in hide)]
         if isinstance(item, dict):
             return {k: strip(v) for k, v in item.items() if k not in hide}
         return item
@@ -250,6 +258,10 @@ def _hidden(scope, value):
 def _within(row: dict, forced: dict) -> bool:
     """Whether a record falls inside the caller's scope filters."""
     for key, value in forced.items():
+        if isinstance(value, dict):
+            if str(row.get(key, "")) in [str(v) for v in value["not"]]:
+                return False
+            continue
         allowed = [str(v) for v in value] if isinstance(value, (list, tuple)) else [str(value)]
         if str(row.get(key, "")) not in allowed:
             return False

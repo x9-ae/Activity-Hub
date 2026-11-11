@@ -440,7 +440,10 @@ class ActivityReader:
             if value is None or value == "" or value == []:
                 continue
             column, kind = allowed[name]
-            if isinstance(value, (list, tuple)):
+            if isinstance(value, dict):   # {"not": [...]}: a scope leaving some values out
+                clauses.append(f"{column} NOT IN {{{name}:Array({kind})}}")
+                parameters[name] = list(value["not"])
+            elif isinstance(value, (list, tuple)):
                 clauses.append(f"{column} IN {{{name}:Array({kind})}}")
                 parameters[name] = list(value)
             else:

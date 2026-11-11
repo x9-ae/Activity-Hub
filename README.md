@@ -13,7 +13,7 @@ behind the package's back.
 ## Install
 
 ```bash
-pip install "activity-hub @ https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.8.1.tar.gz"
+pip install "activity-hub @ https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.9.0.tar.gz"
 ```
 
 (The release archive needs no git on the machine installing it.)
@@ -347,10 +347,13 @@ app.include_router(activity_router(get_reader=lambda: reader, authorize=can_read
   they are not sealed.
 - **Customer-facing logs.** The scope can also hold:
   - `"kinds": ["events"]`, which leaves the API access log out (403 for `kind: requests`);
-  - `"hide": [...]`, fields taken out of every record answered, at any depth.
+  - `"hide": [...]`, fields taken out of every record answered, at any depth. A name that is not one
+    of the record's own fields is a key inside its details and changes (e.g. `"book"`): it is taken
+    out of the metadata, the changes and their labelled lists;
+  - a filter that leaves values out, `{"target_type": {"not": ["user"]}}` (scopes only).
 
   A hidden field cannot be searched either: a filter or search term on it is 400, and so is free
-  text while a field it reads (`metadata`, `changes` …) is hidden. Otherwise each search would tell
+  text while a field it reads (`metadata`, `changes` …), or a key inside them, is hidden. Otherwise each search would tell
   its value apart.
 
   A trader's own log is, for example,
@@ -374,7 +377,7 @@ The same repository ships the viewer every application shows: the log, an entity
 record's detail. It reads the routes above and nothing else.
 
 ```bash
-npm install "https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.8.1.tar.gz"
+npm install "https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.9.0.tar.gz"
 ```
 
 ```tsx

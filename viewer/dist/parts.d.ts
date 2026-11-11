@@ -50,7 +50,8 @@ export declare function Skeleton({ rows }: {
 export declare function Facts({ facts }: {
     facts?: Fact[];
 }): import("react/jsx-runtime").JSX.Element | null;
-/** Label and value pairs as a two-column table; empty values are left out. */
+/** Label and value pairs in a grid: two pairs a row where there is room, one on a narrow screen.
+ * Empty values are left out. */
 export declare function KeyValues({ items, mono }: {
     items: [string, unknown][];
     mono?: boolean;

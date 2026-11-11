@@ -297,7 +297,7 @@ describe("ActivityTimeline", () => {
     fireEvent.click(screen.getByRole("button", { name: /Details and 1 record change/ }))
     expect(screen.getByText("A-book")).toBeTruthy()
     fireEvent.click(screen.getByRole("button", { name: /position record 9/ }))
-    expect(screen.getByText("0.10", { selector: "td" })).toBeTruthy()
+    expect(screen.getByText("0.10", { selector: "dd" })).toBeTruthy()
 
     fireEvent.click(screen.getByRole("button", { name: /Trade opened/ }))
     expect(await screen.findByRole("dialog", { name: "Activity details" })).toBeTruthy()

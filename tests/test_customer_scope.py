@@ -19,7 +19,8 @@ def test_a_client_reads_only_their_own_events_without_internals(settings, tmp_pa
     hub = ActivityHub(settings, spool_dir=str(tmp_path), app="x9", environment="1x", service="trading_service")
     with activity_context(actor_type="account", actor_id="100234", request_id="r1", tenant_id="3"):
         hub.record_event("data.created", target_type="trading_positions", target_id="9", occurred_at=AT)
-        opened = hub.record_event("trade.opened", target_type="ticket", target_id="1", occurred_at=AT + timedelta(milliseconds=1))
+        opened = hub.record_event("trade.opened", target_type="ticket", target_id="1", occurred_at=AT + timedelta(milliseconds=1),
+                                  metadata={"side": "BUY"})
         hub.record_access(method="POST", route="/trade", path="/trade", status=200, duration_ms=3)
     hub.record_event("user.signed_in", actor_type="visitor", actor_id="100234", outcome="failed", reason="wrong password",
                      tenant_id="3", occurred_at=AT + timedelta(seconds=1))
@@ -67,6 +68,25 @@ def test_a_client_reads_only_their_own_events_without_internals(settings, tmp_pa
     assert strict_client.post("/me/search", json={}).json()["items"][-1]["action"] == "trade.opened", "data.* left out"
     assert strict_client.post("/me/search", json={"query": "book"}).status_code == 400
     assert "details" not in strict_client.get(f"/me/events/{opened}").json()["event"]
+    # a scope can hide keys inside the details and changes, and leave values out of a filter
+    keyed = FastAPI()
+    keyed.include_router(activity_router(get_reader=lambda: reader, authorize=lambda: {
+        **client_scope(), "filters": {"actor_id": "100234", "target_type": {"not": ["ticket"]}}, "hide": [*HIDDEN, "side"]}),
+        prefix="/me")
+    keyed_client = TestClient(keyed)
+    kept = keyed_client.post("/me/search", json={"view": "all", "details": True}).json()["items"]
+    # the trade is left out; its row change, with no event of the scope's to fold under, lists on its own
+    assert [r["action"] for r in kept] == ["user.signed_in", "data.created"], "the excluded target is left out"
+    assert keyed_client.get(f"/me/events/{opened}").status_code == 404
+    assert keyed_client.post("/me/search", json={"query": '"wrong password"'}).status_code == 400, "free text reads the details"
+    every = TestClient(app).post("/me/search", json={"view": "all", "details": True}).json()["items"]
+    assert any(d["field"] == "side" for d in every[1]["details"])
+    side_hidden = FastAPI()
+    side_hidden.include_router(activity_router(get_reader=lambda: reader, authorize=lambda: {
+        **client_scope(), "hide": [*HIDDEN, "side"]}), prefix="/me")
+    trade = TestClient(side_hidden).post("/me/search", json={"view": "all", "details": True}).json()["items"][1]
+    assert "side" not in (trade["metadata"] or {}) and not any(d["field"] == "side" for d in trade["details"])
+
     actions = strict_client.get("/me/catalog").json()["actions"]
     assert actions and {a["category"] for a in actions.values()} <= {"trade", "user"}, "the catalog keeps to the scope"
     reader.close()

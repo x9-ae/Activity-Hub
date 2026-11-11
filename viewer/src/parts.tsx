@@ -133,23 +133,26 @@ export function Facts({ facts }: { facts?: Fact[] }) {
   )
 }
 
-/** Label and value pairs as a two-column table; empty values are left out. */
+// a value longer than this takes a whole row, so it does not stretch the pair beside it
+const WIDE_VALUE = 36
+
+/** Label and value pairs in a grid: two pairs a row where there is room, one on a narrow screen.
+ * Empty values are left out. */
 export function KeyValues({ items, mono = false }: { items: [string, unknown][]; mono?: boolean }) {
   const shown = items.filter(([, value]) => value !== null && value !== undefined && value !== "")
   if (!shown.length) return null
   return (
-    <div className="ahv-scroll-x">
-      <table className="ahv-kv">
-        <tbody>
-          {shown.map(([label, value], i) => (
-            <tr key={`${label}-${i}`}>
-              <th scope="row">{label}</th>
-              <td className={cx(mono && "ahv-mono")}>{typeof value === "object" ? JSON.stringify(value) : String(value)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <dl className="ahv-pairs">
+      {shown.map(([label, value], i) => {
+        const text = typeof value === "object" ? JSON.stringify(value) : String(value)
+        return (
+          <div key={`${label}-${i}`} className={cx("ahv-pair-cell", text.length > WIDE_VALUE && "ahv-pair-wide")}>
+            <dt>{label}</dt>
+            <dd className={cx(mono && "ahv-mono")}>{text}</dd>
+          </div>
+        )
+      })}
+    </dl>
   )
 }
 
@@ -159,22 +162,28 @@ export function ChangeTable({ changes, valueLabel = "Value" }: { changes: Change
   if (!changes.length) return null
   const created = changes.every((c) => c.before === null)
   const deleted = changes.every((c) => c.after === null)
+  if (created || deleted) {
+    // a record's values: the ones it has, the empty ones counted
+    const given = changes.filter((c) => (created ? c.after : c.before) !== null)
+    const empty = changes.length - given.length
+    return (
+      <div className="ahv-stack-gap">
+        {valueLabel !== "Value" && <span className="ahv-eyebrow">{valueLabel}</span>}
+        <KeyValues items={given.map((c) => [c.label, created ? c.after : c.before])} mono />
+        {empty > 0 && <span className="ahv-dim ahv-small">{empty} empty field{empty === 1 ? "" : "s"} not shown</span>}
+      </div>
+    )
+  }
   return (
     <div className="ahv-scroll-x">
       <table className="ahv-changes">
-        <thead>
-          <tr><th>Field</th>{created || deleted ? <th>{valueLabel}</th> : <><th>Before</th><th>After</th></>}</tr>
-        </thead>
+        <thead><tr><th>Field</th><th>Before</th><th>After</th></tr></thead>
         <tbody>
           {changes.map((c) => (
             <tr key={c.field}>
-              <td>{c.label}</td>
-              {created || deleted ? <td className="ahv-mono">{(created ? c.after : c.before) ?? "—"}</td> : (
-                <>
-                  <td className="ahv-mono ahv-before">{c.before ?? "—"}</td>
-                  <td className="ahv-mono ahv-after">{c.after ?? "—"}</td>
-                </>
-              )}
+              <td className="ahv-field-name">{c.label}</td>
+              <td className="ahv-mono ahv-before">{c.before ?? "—"}</td>
+              <td className="ahv-mono ahv-after">{c.after ?? "—"}</td>
             </tr>
           ))}
         </tbody>

@@ -38,6 +38,10 @@ import json
 from activity_hub.records import OUTCOMES, MASKED
 
 IMPORTANCE = ("high", "normal", "low")
+# words a label keeps in capitals: lp_price reads "LP price", not "Lp price"
+ACRONYMS = {"id": "ID", "ip": "IP", "lp": "LP", "sl": "SL", "tp": "TP", "url": "URL", "api": "API", "utc": "UTC",
+            "fix": "FIX", "pnl": "P&L"}
+STAMP_WITH_MICROSECONDS = re.compile(r"^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}\.\d{4,}")
 ENTRY_KEYS = {"title", "says", "importance", "importance_for", "fold", "facts", "icon", "tone"}
 ICONS = ("clock", "bolt", "pencil", "scissors", "checkCircle", "xCircle", "trendUp", "trendDown", "user", "key",
          "money", "alert", "shield", "download", "send", "log", "layers")
@@ -205,7 +209,7 @@ class Catalog:
     # how a record reads
 
     def label(self, field: str) -> str:
-        return self.fields.get(field) or words(field)
+        return self.fields.get(field) or " ".join(ACRONYMS.get(w, w) for w in words(field).split(" "))
 
     def say(self, field: str, value) -> str | None:
         """A value as a reader sees it: a named code ('1' -> 'BUY'), a formatted number, yes/no, a list
@@ -217,8 +221,10 @@ class Catalog:
         if isinstance(value, (list, tuple)):
             return ", ".join(filter(None, (self.say(field, item) for item in value))) or None
         if isinstance(value, dict):
-            return json.dumps(value, default=str, separators=(", ", ": "))
+            return ", ".join(f"{self.label(k)}: {said}" for k, v in value.items() if (said := self.say(k, v)) is not None) or None
         spec = self.values.get(field)
+        if spec is None and isinstance(value, str) and STAMP_WITH_MICROSECONDS.match(value):
+            return value[:23].replace("T", " ")   # a time to the millisecond, as the log shows times
         if isinstance(spec, str):
             try:
                 return spec.format(float(value))

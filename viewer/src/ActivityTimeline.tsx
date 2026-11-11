@@ -54,7 +54,7 @@ export function ActivityTimeline({ request, entity, view = "all", action, newest
           {partial && <p className="ahv-dim ahv-small">Showing the newest {LIMIT} steps.{more && <> {more}</>}</p>}
           <h3 className="ahv-eyebrow">{events.length} step{events.length === 1 ? "" : "s"}, {newestFirst ? "newest" : "oldest"} first</h3>
           <ol className="ahv-steps">
-            {events.map((event) => <Step key={event.id} event={event} onOpen={() => setSelected(event)} />)}
+            {events.map((event) => <Step key={event.id} event={event} onOpen={setSelected} />)}
           </ol>
         </>
       )}
@@ -69,7 +69,7 @@ const markOf = (event: ActivityEvent): { icon: IconName; tone: string } => {
   return { icon: event.icon ?? (event.category === "data" ? "layers" : "log"), tone: event.tone ?? "neutral" }
 }
 
-function Step({ event, onOpen }: { event: ActivityEvent; onOpen: () => void }) {
+function Step({ event, onOpen }: { event: ActivityEvent; onOpen: (row: Row) => void }) {
   const [open, setOpen] = useState(false)
   const { icon, tone } = markOf(event)
   const records = event.children ?? []
@@ -83,7 +83,7 @@ function Step({ event, onOpen }: { event: ActivityEvent; onOpen: () => void }) {
       <div className="ahv-step-main">
         <div className="ahv-step-head">
           <div className="ahv-stack">
-            <button type="button" className="ahv-step-title" onClick={onOpen} title="Open the full detail">
+            <button type="button" className="ahv-step-title" onClick={() => onOpen(event)} title="Open the full detail">
               {event.title}<OutcomeTag outcome={event.outcome} />
             </button>
             <ByLine event={event} />
@@ -108,7 +108,7 @@ function Step({ event, onOpen }: { event: ActivityEvent; onOpen: () => void }) {
         {open && (
           <div className="ahv-step-more">
             {event.details?.length ? <KeyValues items={event.details.map((d) => [d.label, d.value])} mono /> : null}
-            {counted > 0 && <RecordChanges records={records} counted={counted} onOpen={onOpen} />}
+            {counted > 0 && <RecordChanges records={records} counted={counted} onOpen={onOpen} parent={event} />}
           </div>
         )}
       </div>
@@ -131,27 +131,29 @@ function ByLine({ event }: { event: ActivityEvent }) {
 }
 
 /** The record changes a step's request made: one row each, its fields a click away. */
-function RecordChanges({ records, counted, onOpen }: { records: ActivityEvent[]; counted: number; onOpen: () => void }) {
+function RecordChanges({ records, counted, onOpen, parent }: {
+  records: ActivityEvent[]; counted: number; onOpen: (row: Row) => void; parent: ActivityEvent
+}) {
   const [shown, setShown] = useState<string | null>(null)
   return (
     <div className="ahv-records">
       <table className="ahv-changes ahv-records-table">
-        <thead><tr><th>Record</th><th>Change</th><th>Fields</th></tr></thead>
+        <thead><tr><th>Record</th><th>Change</th><th>Fields</th><th><span className="ahv-hidden">Detail</span></th></tr></thead>
         <tbody>
           {records.map((record) => {
             const fields = record.change_list ?? []
             const isOpen = shown === record.id
             return (
               <RecordRow key={record.id} record={record} fields={fields.length} open={isOpen}
-                onToggle={() => setShown(isOpen ? null : record.id)}>
-                {isOpen && <tr className="ahv-records-fields"><td colSpan={3}><ChangeTable changes={fields} /></td></tr>}
+                onToggle={() => setShown(isOpen ? null : record.id)} onOpen={() => onOpen(record)}>
+                {isOpen && <tr className="ahv-records-fields"><td colSpan={4}><ChangeTable changes={fields} /></td></tr>}
               </RecordRow>
             )
           })}
         </tbody>
       </table>
       {counted > records.length && (
-        <button type="button" className="ahv-link-button" onClick={onOpen}>
+        <button type="button" className="ahv-link-button" onClick={() => onOpen(parent)}>
           {counted - records.length} more in the full detail
         </button>
       )}
@@ -159,8 +161,8 @@ function RecordChanges({ records, counted, onOpen }: { records: ActivityEvent[];
   )
 }
 
-function RecordRow({ record, fields, open, onToggle, children }: {
-  record: ActivityEvent; fields: number; open: boolean; onToggle: () => void; children: ReactNode
+function RecordRow({ record, fields, open, onToggle, onOpen, children }: {
+  record: ActivityEvent; fields: number; open: boolean; onToggle: () => void; onOpen: () => void; children: ReactNode
 }) {
   const change = record.action === "data.created" ? "Created" : record.action === "data.deleted" ? "Deleted" : "Updated"
   return (
@@ -177,6 +179,10 @@ function RecordRow({ record, fields, open, onToggle, children }: {
           {record.action === "data.updated"
             ? (record.change_list ?? []).slice(0, 3).map((c) => c.label).join(", ") + (fields > 3 ? ` and ${fields - 3} more` : "")
             : `${fields} value${fields === 1 ? "" : "s"}`}
+        </td>
+        <td className="ahv-cell-end">
+          <button type="button" className="ahv-icon-button" title="Open the record's full detail" aria-label="Open the record's full detail"
+            onClick={onOpen}><Icon name="arrowRight" size={13} /></button>
         </td>
       </tr>
       {children}

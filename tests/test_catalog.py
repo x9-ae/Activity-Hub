@@ -281,3 +281,11 @@ def test_related_entities_read_the_same_from_either_driver_shape():
     from activity_hub.records import related_pairs
     assert related_pairs([{"type": "account", "id": "1"}, ("ticket", "2")]) == [["account", "1"], ["ticket", "2"]]
     assert related_pairs(None) == []
+
+
+def test_values_read_like_a_person_wrote_them():
+    catalog = Catalog()
+    assert catalog.say("commission_rule", {"charge_mode": "instant", "value": "3"}) == "charge mode: instant, value: 3"
+    assert catalog.say("created_at", "2026-11-11 10:31:59.027862") == "2026-11-11 10:31:59.027"
+    assert [d["label"] for d in catalog.details({"metadata": {"lp_price": 1, "id": 2, "client_ip": "x"}})] == [
+        "LP price", "ID", "Client IP"]
