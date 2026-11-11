@@ -60,6 +60,10 @@ BUILT_IN_EVENTS = {
     "activity.exported": {"title": "Activity exported", "says": "Exported the activity log[ ({rows} rows)]",
                           "importance": "high"},
     "activity.searched": {"title": "Activity searched", "says": "Searched the activity log", "importance": "low"},
+    "activity.stream_saved": {"title": "Activity stream saved",
+                              "says": "Saved the stream {stream}[ of {kind}] to {destination}", "importance": "high"},
+    "activity.stream_removed": {"title": "Activity stream removed", "says": "Removed the stream {stream}",
+                                "importance": "high"},
     # track_changes: every row change, a detail unless staff or a partner made it by hand
     "data.created": {"title": "Record created", "says": "Created {on}", "importance": "low",
                      "importance_for": {"staff": "normal", "api_key": "normal"}, "fold": True},

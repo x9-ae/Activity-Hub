@@ -10,6 +10,8 @@ MINUTE = timedelta(minutes=1)
 EMPTY_ROWS_HASH = hashlib.sha256(b"").hexdigest()
 # rows still being inserted when a minute ends are given this long to land before it is sealed
 DEFAULT_LAG_SECONDS = 120
+# a sealer run every minute may be up to this late: the newest minutes are not yet counted as missing
+SEALER_SLACK_SECONDS = 120
 # A minute with no rows is sealed only on the hour: a checkpoint that rows added to an empty minute
 # before it show (as rows in a minute with no seal), at 24 seals a day instead of 1440.
 CHECKPOINT_MINUTE = 0
@@ -101,9 +103,10 @@ def verify(settings: dict, *, table: str | None = None, window_from: datetime | 
     client = get_client(settings, database=settings["database"])
     problems, checked, rows = [], 0, 0
     try:
-        # the window ends where sealing has got to: the server's clock, less the sealer's lag
+        # the window ends where sealing has surely got to: the server's clock, less the sealer's lag
+        # and the time between its runs
         now = client.query("SELECT now64(3, 'UTC')").result_rows[0][0].replace(tzinfo=timezone.utc)
-        sealable = _minute(now - timedelta(seconds=DEFAULT_LAG_SECONDS))
+        sealable = _minute(now - timedelta(seconds=DEFAULT_LAG_SECONDS + SEALER_SLACK_SECONDS))
         for name in (table,) if table else SEALED_TABLES:
             seals = _seals(client, name, window_from, window_to)
             checked += len(seals)

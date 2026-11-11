@@ -48,6 +48,27 @@ def test_a_client_reads_only_their_own_events_without_internals(settings, tmp_pa
     assert detail["requests"] == [] and "request_id" not in detail["event"]
     assert client.get("/me/status").json()["checks"] is False
     assert client.get("/me/views").json() == {"enabled": False, "views": []}
+
+    # a hidden field is not searched either: each answer would tell its value apart
+    assert client.post("/me/search", json={"filters": {"service": "trading_service"}}).status_code == 400
+    assert client.post("/me/search", json={"query": "session:abc"}).status_code == 400
+    assert client.post("/me/chart", json={"query": "-request:r1"}).status_code == 400
+    assert client.post("/me/search", json={"query": '"wrong password"'}).json()["items"][0]["action"] == "user.signed_in"
+
+    # the stricter scope of a customer-facing log: no row changes and no stored details
+    strict = FastAPI()
+    strict.include_router(activity_router(get_reader=lambda: reader, authorize=lambda: {
+        **client_scope(), "filters": {"actor_id": "100234", "category": ["trade", "user"]},
+        "hide": [*HIDDEN, "metadata", "changes"]}), prefix="/me")
+    strict_client = TestClient(strict)
+    rows = strict_client.post("/me/search", json={"view": "all"}).json()["items"]
+    assert [r["action"] for r in rows] == ["user.signed_in", "trade.opened"] and rows[1]["children"] == []
+    assert not {"metadata", "details", "changes", "change_list"} & set(rows[1]) and rows[1]["summary"]
+    assert strict_client.post("/me/search", json={}).json()["items"][-1]["action"] == "trade.opened", "data.* left out"
+    assert strict_client.post("/me/search", json={"query": "book"}).status_code == 400
+    assert "details" not in strict_client.get(f"/me/events/{opened}").json()["event"]
+    actions = strict_client.get("/me/catalog").json()["actions"]
+    assert actions and {a["category"] for a in actions.values()} <= {"trade", "user"}, "the catalog keeps to the scope"
     reader.close()
 
 
@@ -56,7 +77,7 @@ def test_a_router_mounts_only_the_parts_asked_for():
     router = activity_router(get_reader=lambda: None, authorize=client_scope, parts=("search", "event", "export", "catalog"))
     assert sorted(route.path for route in router.routes) == ["/catalog", "/events/{event_id}", "/export", "/search"]
     every = activity_router(get_reader=lambda: None, authorize=client_scope)
-    assert len(every.routes) == 14, "every route belongs to a part"
+    assert len(every.routes) == 18, "every route belongs to a part"
     with pytest.raises(ValueError, match="unknown parts"):
         activity_router(get_reader=lambda: None, authorize=client_scope, parts=("search", "alerts"))
 

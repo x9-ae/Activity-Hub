@@ -13,7 +13,7 @@ behind the package's back.
 ## Install
 
 ```bash
-pip install "activity-hub @ https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.6.0.tar.gz"
+pip install "activity-hub @ https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.7.0.tar.gz"
 ```
 
 (The release archive needs no git on the machine installing it.)
@@ -325,6 +325,10 @@ app.include_router(activity_router(get_reader=lambda: reader, authorize=can_read
 | `POST /integrity/verify` | Every record of one UTC day (`{"day": "2026-11-09"}`) checked against its seals: `ok`, the records and seals checked, the problems |
 | `GET /integrity/seal/{day}` | The day's proof, to keep outside the database |
 | `POST /integrity/check` | A kept proof (`{"record": …}`) compared with the database: catches a rewrite of records and seals together |
+| `GET /streams` | The tenant's streams and how each stands; `{"enabled": false}` while the application keeps none |
+| `POST /streams` | Saves a stream, or a new version of one (`id`): `name`, `kind`, `query`, `destination`, `target`, `secret`, `secret_headers`, `enabled`, `start`. Secrets are never answered. Recorded as `activity.stream_saved` |
+| `DELETE /streams/{id}` | Removes a stream: nothing more is sent. Recorded as `activity.stream_removed` |
+| `POST /streams/{id}/test` | Sends one test line to the destination: `{"ok", "error"}` |
 
 - **Saved views:**
   - `GET /views` lists the caller's own views and those shared in their tenant;
@@ -338,10 +342,14 @@ app.include_router(activity_router(get_reader=lambda: reader, authorize=can_read
   - `"kinds": ["events"]`, which leaves the API access log out (403 for `kind: requests`);
   - `"hide": [...]`, fields taken out of every record answered, at any depth.
 
+  A hidden field cannot be searched either: a filter or search term on it is 400, and so is free
+  text while a field it reads (`metadata`, `changes` …) is hidden. Otherwise each search would tell
+  its value apart.
+
   A trader's own log is, for example,
   `{"filters": {"actor_id": "100234"}, "kinds": ["events"], "hide": ["service", "tenant_id", "request_id"]}`.
 - **`activity_router` options.** `parts=` mounts only some groups: `search`, `chart`, `values`,
-  `export`, `event`, `catalog`, `views`, `integrity` and `status`. `respond=` turns every answer
+  `export`, `event`, `catalog`, `views`, `integrity`, `status` and `streams`. `respond=` turns every answer
   into the application's own envelope.
 - **The integrity checks** cover every tenant's records. A caller whose scope has filters gets
   403. `authorize_checks` decides who else may run them; without it, the export permission does.
@@ -359,7 +367,7 @@ The same repository ships the viewer every application shows: the log, an entity
 record's detail. It reads the routes above and nothing else.
 
 ```bash
-npm install "https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.6.0.tar.gz"
+npm install "https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.7.0.tar.gz"
 ```
 
 ```tsx
@@ -440,6 +448,55 @@ added to an empty minute later still show.
 - rows in a minute with no seal.
 
 **The daily seal record.** Keeping it elsewhere catches even a rewrite of rows and seals together.
+
+## 10. Streams
+
+A stream sends new records to a system the tenant owns, as they are written: a CRM, a SIEM or an
+archive bucket. It is set up in the viewer (Streams, next to Export) or through `/streams`.
+
+```python
+from activity_hub import StreamStore, deliver_streams
+
+store = StreamStore(settings, key=app_secret)      # secrets are encrypted with a key derived from it
+app.include_router(activity_router(..., streams=lambda: store), prefix="/activity")
+
+deliver_streams(settings, key=app_secret)         # every minute, from one process
+```
+
+| Destination | Receives |
+|---|---|
+| Webhook (HTTPS) | `POST` batches of up to 1000 JSON lines (`application/x-ndjson`), with the stream's headers and `X-Activity-Signature: t=<unix time>,v1=<hex HMAC-SHA256 of "t." + body>` keyed by the signing secret |
+| S3-compatible (S3, R2, MinIO, Wasabi) | One gzip JSON-lines file per batch at `<folder>/<events or requests>/YYYY/MM/DD/HHMMSS-<first id>.jsonl.gz` |
+
+- **What is sent.** Each line is a record as the viewer reads it (events with their title and
+  sentence), with `kind`. A stream sends events, API requests or both, and can be narrowed with
+  the search language (`action:trade.* -result:success`). A tenant's stream only ever holds that
+  tenant's records; a stream made with no tenant in the scope holds every record.
+- **When.** A record goes out once it is past the sealing lag (two minutes), in arrival order. A
+  new stream starts from now, or from the beginning of the log.
+- **Delivery is at least once.** Each stream keeps where it got to. A failed send is tried again
+  after 2, 4, 8 … minutes, never more than an hour, and resumes from the same record: nothing is
+  skipped. A batch the receiver accepted just before a failure (a timeout, a lost progress write)
+  is sent again, so a receiver drops a line whose `id` it already has.
+- **One process.** Run `deliver_streams` every minute from one process only: two at once send
+  batches twice. A run starts no new send after 45 seconds, and the streams waiting longest go first.
+- **Changing a stream.** A kind added later (events, then both) starts from that moment.
+- **Checking a webhook's signature:** recompute the HMAC over `t + "." + body` and compare; refuse a
+  `t` more than five minutes old.
+- **Safety.**
+  - A webhook must be `https` to a public internet address. The address is checked at every send
+    and the connection goes to the address checked, so a name cannot be re-pointed in between.
+    Redirects and environment proxies are not used.
+  - The signing secret, the bucket's keys and the webhook's header values (`secret_headers`, an
+    intake key for Datadog or Splunk) are encrypted with the application's key and never answered.
+    The access log masks both fields.
+  - On an edit, a blank secret or header value keeps the stored one only while the stream goes to
+    the same host (or the same bucket and endpoint). Pointing it elsewhere needs them all again.
+  - Rotating the application's key means saving each stream's secret again.
+- **Who.** `authorize_streams` decides; without it, the export permission does. A stream sends
+  whole records of one tenant, so a scope narrower than that gets 403: filters other than
+  `tenant_id`, several tenants, any `hide`, or a `kind` its `kinds` leave out.
+- **Install:** `pip install "activity-hub[api,streams] @ …"` (cryptography, and boto3 for S3).
 
 ## Tests
 

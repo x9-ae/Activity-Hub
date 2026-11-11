@@ -28,7 +28,7 @@ MAX_JSON_BYTES = 64 * 1024
 MAX_TEXT_LENGTH = 2048
 # keys whose values are never stored, at any depth of a recorded request body; a key that only
 # describes a secret (token_expire_time, password_type, api_key_count) is not one
-SECRET_KEY = re.compile(r"pass|secret|token|api_?key|access_?key|private_?key|credential|authori[sz]ation|cvv|otp|^pin$",
+SECRET_KEY = re.compile(r"pass|secret|token|api[-_]?key|access[-_]?key|private[-_]?key|subscription[-_]?key|credential|authori[sz]ation|cvv|otp|^pin$",
                         re.IGNORECASE)
 NOT_SECRET_SUFFIX = re.compile(r"(_at|_time|_date|_type|_types|_count|_mode|_expiry|_expires|_length|_status|_id)$",
                                re.IGNORECASE)

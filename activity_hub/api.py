@@ -32,6 +32,7 @@ from starlette.concurrency import run_in_threadpool
 from activity_hub.logger import logger
 from activity_hub.reader import MAX_PAGE_SIZE, EVENT_FILTERS, ACCESS_FILTERS, MAX_VIEW_NAME, MAX_VIEW_SEARCH
 from activity_hub.query import MAX_QUERY_LENGTH
+from activity_hub import query as search_language
 
 # rows one list page may ask for; an export reads MAX_PAGE_SIZE per page
 MAX_LIST_SIZE = 500
@@ -48,12 +49,14 @@ UNREACHABLE = "The activity log could not be read; try again shortly"
 NOT_FOUND = "No such event"
 KINDS = ("events", "requests")
 # the groups of routes a router may mount, and the handler each route belongs to
-PARTS = ("search", "chart", "values", "export", "event", "catalog", "views", "integrity", "status")
+PARTS = ("search", "chart", "values", "export", "event", "catalog", "views", "integrity", "status", "streams")
 ROUTE_PART = {"search_log": "search", "chart": "chart", "values": "values", "export": "export", "event_detail": "event",
               "catalog": "catalog", "views": "views", "save_view": "views", "remove_view": "views",
               "verify_day": "integrity", "day_seal": "integrity", "check_proof": "integrity",
-              "integrity_allowed": "integrity", "log_status": "status"}
+              "integrity_allowed": "integrity", "log_status": "status", "list_streams": "streams", "save_stream": "streams",
+              "remove_stream": "streams", "test_stream": "streams"}
 NO_VIEWS = "Saved views are not available here"
+NO_STREAMS = "Streams are not set up on this server"
 EARLIEST_DAY = date(2000, 1, 1)
 # a kept proof names each table's last seal: a few, never thousands
 MAX_PROOF_SEALS = 50
@@ -131,6 +134,24 @@ class Proof(BaseModel):
         return value
 
 
+class StreamIn(BaseModel):
+    """A stream to save (activity_hub.streams). secret: the webhook's signing secret, or the bucket's
+    {"access_key", "secret_key"}; secret_headers: the webhook's own headers, {name: value}. Left blank
+    on an update, the stored secret and header values are kept while the stream still goes to the
+    same address. start: "now" sends records from now on, "beginning" everything kept too (a new
+    stream only). Both secret fields are masked in the access log."""
+    id: Optional[str] = None
+    name: str = Field(min_length=1, max_length=80)
+    kind: Literal["events", "requests", "both"] = "events"
+    query: str = Field("", max_length=MAX_QUERY_LENGTH)
+    destination: Literal["webhook", "s3"]
+    target: dict = Field(default_factory=dict)
+    secret: Optional[Union[str, dict]] = None
+    secret_headers: dict[str, str] = Field(default_factory=dict)
+    enabled: bool = True
+    start: Literal["now", "beginning"] = "now"
+
+
 class SavedView(BaseModel):
     """A view to save: its name, the viewer's search (the address's query string) and whether everyone
     in the tenant sees it. id: a view of one's own to replace."""
@@ -149,8 +170,30 @@ def _scope_filters(scope) -> dict:
     return dict((scope or {}).get("filters") or {})
 
 
+def _refuse_hidden(search: Search, scope) -> None:
+    """A field the scope hides is not searched either: each search would tell its value apart."""
+    hide = set((scope or {}).get("hide") or ())
+    if not hide:
+        return
+    hidden = sorted(hide & set(search.filters))
+    # the search's own arguments, by the fields they read
+    asked = {"action": search.action, "status": search.status_from,
+             "outcome": search.view in ("problems", "important") or None,
+             "target_id": search.related_id, "target_type": search.related_type, "related": search.related_id}
+    hidden += [field for field, value in asked.items() if value is not None and field in hide]
+    for field, _value, _negated in search_language.parse(search.query or "", search.kind):
+        if field is None and hide & set(search_language.TEXT_COLUMNS[search.kind]):
+            raise ValueError("free-text search is not available here: search by field, e.g. action:trade.*")
+        column = search_language.FIELDS[search.kind].get(field)
+        if column and hide & ({"actor_id", "actor_name"} if column == "actor" else {column}):
+            hidden.append(field)
+    if hidden:
+        raise ValueError(f"not searchable here: {', '.join(sorted(set(hidden)))}")
+
+
 def _criteria(search: Search, scope) -> dict:
     """The reader's arguments for a search under the caller's scope (the scope's filters win)."""
+    _refuse_hidden(search, scope)
     forced = _scope_filters(scope)
     criteria = {**search.filters, **forced, "occurred_from": search.occurred_from, "occurred_to": search.occurred_to,
                 "query": search.query}
@@ -222,7 +265,7 @@ def _owner(scope) -> tuple:
 
 
 def activity_router(*, get_reader, authorize, authorize_export=None, authorize_checks=None, record=None,
-                    status=None, parts=PARTS, respond=None) -> APIRouter:
+                    status=None, parts=PARTS, respond=None, authorize_streams=None, streams=None) -> APIRouter:
     """The read routes: POST /search, /chart, /values, /export; GET /events/{id}, /catalog, /status;
     saved views at GET/POST /views and DELETE /views/{id}; integrity checks at POST /integrity/verify,
     GET /integrity/seal/{day} and POST /integrity/check. authorize_checks (the export permission when
@@ -230,6 +273,9 @@ def activity_router(*, get_reader, authorize, authorize_export=None, authorize_c
     may. parts: which groups of routes to mount (see PARTS), e.g. a partner API without views or checks.
     respond: turns every successful answer into the application's own response, e.g. its envelope
     {"status": true, "data": ...}; errors stay HTTPExceptions for its own handlers.
+    streams: a callable returning the StreamStore (activity_hub.streams), or None while the
+    application has none; authorize_streams (the export permission when not given) lets a caller
+    manage its tenant's streams.
     See the module's description."""
     respond = respond or (lambda payload: payload)
     unknown = set(parts) - set(PARTS)
@@ -238,6 +284,7 @@ def activity_router(*, get_reader, authorize, authorize_export=None, authorize_c
     router = APIRouter(tags=["Activity"])
     authorize_export = authorize_export or authorize
     authorize_checks = authorize_checks or authorize_export
+    authorize_streams = authorize_streams or authorize_export
 
     def whole_log(scope) -> None:
         if _scope_filters(scope):
@@ -342,9 +389,10 @@ def activity_router(*, get_reader, authorize, authorize_export=None, authorize_c
             if event["request_id"]:
                 same = reader.search_events(request_id=event["request_id"], limit=SAME_REQUEST_LIMIT, **forced)["items"]
                 if "requests" in ((scope or {}).get("kinds") or KINDS):
-                    access_scope = {key: value for key, value in forced.items() if key in ACCESS_FILTERS}
-                    calls = reader.search_access_logs(request_id=event["request_id"], limit=SAME_REQUEST_LIMIT,
-                                                      **access_scope)["items"]
+                    # a scope key the access log lacks would be dropped and read wider: then no calls
+                    if set(forced) <= set(ACCESS_FILTERS):
+                        calls = reader.search_access_logs(request_id=event["request_id"], limit=SAME_REQUEST_LIMIT,
+                                                          **forced)["items"]
             event["details"] = reader.catalog.details(event)
             same = sorted((item for item in same if item["id"] != event["id"]), key=lambda item: item["occurred_at"])
             return {"event": event, "same_request": same, "requests": sorted(calls, key=lambda item: item["occurred_at"])}
@@ -364,9 +412,13 @@ def activity_router(*, get_reader, authorize, authorize_export=None, authorize_c
         the actor types and entity kinds, and the views."""
         def describe(reader):
             known = reader.catalog
+            # a scope held to some categories is told of their actions only
+            categories = _scope_filters(scope).get("category")
+            categories = None if categories is None else {categories} if isinstance(categories, str) else set(categories)
             return {"views": ["important", "all", "problems"],
                     "actions": {action: {"title": known.title(action), "importance": known.importance(action),
-                                         "category": action.split(".", 1)[0]} for action in sorted(known.events)},
+                                         "category": action.split(".", 1)[0]} for action in sorted(known.events)
+                                if categories is None or action.split(".", 1)[0] in categories},
                     "actor_types": known.actor_types, "entities": known.entities}
         return respond(await read(describe))
 
@@ -402,12 +454,18 @@ def activity_router(*, get_reader, authorize, authorize_export=None, authorize_c
     async def verify_day(day: Day, scope=Depends(authorize_checks)):
         """Every record of a UTC day recomputed against its seals, and the chain between them."""
         whole_log(scope)
-        if not checking.acquire(blocking=False):
+
+        def check(reader):
+            # held by the thread doing the work: a request cancelled midway must not free it early
+            if not checking.acquire(blocking=False):
+                return None
+            try:
+                return reader.verify_day(day.day)
+            finally:
+                checking.release()
+        report = await read(lambda reader: check(reader) or {"busy": True})
+        if report.get("busy"):
             raise HTTPException(status_code=409, detail="A check is already running; try again when it ends")
-        try:
-            report = await read(lambda reader: reader.verify_day(day.day))
-        finally:
-            checking.release()
         return respond({"day": day.day.isoformat(), "ok": report["ok"], "checked": report["checked"], "rows": report["rows"],
                         "problems": report["problems"][:SHOWN_PROBLEMS],
                         "more": max(0, len(report["problems"]) - SHOWN_PROBLEMS)})
@@ -436,6 +494,77 @@ def activity_router(*, get_reader, authorize, authorize_export=None, authorize_c
         whole_log(scope)
         mismatches = await read(lambda reader: {"mismatches": reader.check_day_seal(proof.record)})
         return respond({"ok": not mismatches["mismatches"], **mismatches})
+
+    def stream_tenant(scope, kind: str | None = None) -> str:
+        """A stream sends whole records of one tenant: a caller held to anything narrower (an actor, some
+        hidden fields, one kind of record, several tenants) sets none up."""
+        forced = _scope_filters(scope)
+        tenant = forced.get("tenant_id") or ""
+        if isinstance(tenant, (list, tuple)):
+            tenant = tenant[0] if len(tenant) == 1 else None
+        if set(forced) - {"tenant_id"} or tenant is None or (scope or {}).get("hide"):
+            raise HTTPException(status_code=403, detail="Streams are set up for a whole company")
+        allowed = (scope or {}).get("kinds") or KINDS
+        if kind and not set({"both": KINDS}.get(kind, (kind,))) <= set(allowed):
+            raise HTTPException(status_code=403, detail=f"The {kind} of the log are not available here")
+        return str(tenant)
+
+    def note(action: str, **fields) -> None:
+        if record is not None:
+            try:
+                record(action, **fields)
+            except Exception as e:
+                logger.error(f"activity hub: {action} not recorded: {e}")
+
+    async def with_streams(work):
+        store = streams() if streams else None
+        if store is None:
+            raise HTTPException(status_code=404, detail=NO_STREAMS)
+        try:
+            return await run_in_threadpool(work, store)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            logger.error(f"activity hub: streams failed: {e}")
+            raise HTTPException(status_code=503, detail=UNREACHABLE)
+
+    @router.get("/streams")
+    async def list_streams(scope=Depends(authorize_streams)):
+        """The company's streams and how each stands (active, failing or paused, what it last
+        delivered); enabled is false while the application keeps no streams."""
+        tenant = stream_tenant(scope)
+        if not streams or streams() is None:
+            return respond({"enabled": False, "streams": []})
+        return respond({"enabled": True, "streams": await with_streams(lambda store: store.list(tenant))})
+
+    @router.post("/streams")
+    async def save_stream(stream: StreamIn, scope=Depends(authorize_streams)):
+        """Saves a stream, or a new version of one of the company's own; its secret is never answered."""
+        tenant = stream_tenant(scope, stream.kind)
+        viewer = (scope or {}).get("viewer") or {}
+        saved = await with_streams(lambda store: store.save(
+            tenant, name=stream.name, kind=stream.kind, destination=stream.destination, target=stream.target,
+            secret=stream.secret, headers=stream.secret_headers, query=stream.query, enabled=stream.enabled,
+            start=stream.start, stream_id=stream.id, created_by=str(viewer.get("name") or viewer.get("id") or "")))
+        place = saved["target"].get("url") or f"s3://{saved['target'].get('bucket', '')}/{saved['target'].get('prefix', '')}"
+        note("activity.stream_saved", tenant_id=tenant or None, target_type="stream", target_id=saved["id"], target_name=saved["name"],
+             metadata={"stream": saved["name"], "kind": saved["kind"], "destination": place.rstrip("/"),
+                       "query": saved["query"], "enabled": saved["enabled"], "start": stream.start if not stream.id else None})
+        return respond(saved)
+
+    @router.delete("/streams/{stream_id}")
+    async def remove_stream(stream_id: str, scope=Depends(authorize_streams)):
+        tenant = stream_tenant(scope)
+        if not await with_streams(lambda store: store.remove(tenant, stream_id)):
+            raise HTTPException(status_code=404, detail="No such stream")
+        note("activity.stream_removed", tenant_id=tenant or None, target_type="stream", target_id=stream_id, metadata={"stream": stream_id})
+        return respond({"removed": True})
+
+    @router.post("/streams/{stream_id}/test")
+    async def test_stream(stream_id: str, scope=Depends(authorize_streams)):
+        """Sends one test line to the stream's destination."""
+        tenant = stream_tenant(scope)
+        return respond(await with_streams(lambda store: store.test(tenant, stream_id)))
 
     @router.get("/status")
     async def log_status(scope=Depends(authorize)):

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "activity-hub"
-version = "0.6.0"
+version = "0.7.0"
 description = "Permanent, append-only activity and audit log for applications, stored in ClickHouse"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -15,7 +15,9 @@ dependencies = [
 [project.optional-dependencies]
 sqlalchemy = ["sqlalchemy>=2.0"]
 api = ["fastapi>=0.100", "pydantic>=2"]
-test = ["pytest==8.3.3", "starlette>=0.41", "httpx>=0.27", "sqlalchemy>=2.0", "fastapi>=0.100", "pydantic>=2"]
+streams = ["cryptography>=41", "boto3>=1.26"]
+test = ["pytest==8.3.3", "starlette>=0.41", "httpx>=0.27", "sqlalchemy>=2.0", "fastapi>=0.100", "pydantic>=2",
+        "cryptography>=41", "boto3>=1.26"]
 
 [tool.setuptools.packages.find]
 include = ["activity_hub*"]
