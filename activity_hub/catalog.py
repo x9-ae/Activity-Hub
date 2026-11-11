@@ -23,16 +23,25 @@ An event entry:
 - importance: "high" (worth attention: money, security), "normal" (the default), "low" (a detail,
   out of the default view). importance_for: a different importance per actor type.
 - fold: the record is a side effect of its request; it is shown inside the request's main event.
+- facts: the few values a timeline shows as chips, [[label, value], …], both written like a sentence:
+  [["{order_type}", "{order_volume}"], ["@", "{order_price}"], ["SL", "{stop_loss}"]]. A chip whose
+  value is not known is left out.
+- icon and tone: how a timeline marks the step. icon is one of ICONS, tone one of TONES; a failed or
+  refused step is always marked as a problem.
 
 entities name the kinds of things ("ticket"), fields name values ("stop loss"), and values say a
-field's codes ({"1": "BUY"}) or format its numbers ("{:.2f}").
+field's codes ({"1": "BUY"}) or format its numbers ("{:.2f}"). computed adds values worked out from an
+event's metadata, {"left_volume": lambda metadata: …}, usable in sentences and facts like any other.
 """
 import re
 import json
 from activity_hub.records import OUTCOMES, MASKED
 
 IMPORTANCE = ("high", "normal", "low")
-ENTRY_KEYS = {"title", "says", "importance", "importance_for", "fold"}
+ENTRY_KEYS = {"title", "says", "importance", "importance_for", "fold", "facts", "icon", "tone"}
+ICONS = ("clock", "bolt", "pencil", "scissors", "checkCircle", "xCircle", "trendUp", "trendDown", "user", "key",
+         "money", "alert", "shield", "download", "send", "log", "layers")
+TONES = ("sky", "violet", "amber", "emerald", "rose", "neutral")
 PLACEHOLDER = re.compile(r"\{([a-z_][a-z0-9_]*)\}")
 OPTIONAL = re.compile(r"\[([^\[\]]*)\]")
 # a sentence names at most this many changed fields, then "and N more"
@@ -46,31 +55,35 @@ BUILT_IN_EVENTS = {
     "user.signed_in": {
         "title": {"success": "Signed in", "failed": "Sign-in failed", "refused": "Sign-in refused"},
         "says": {"success": "Signed in", "failed": "Failed sign-in[ to {on}]", "refused": "Sign-in refused[ to {on}]"},
+        "icon": "user", "tone": "sky",
     },
-    "user.signed_out": {"title": "Signed out", "says": "Signed out"},
+    "user.signed_out": {"title": "Signed out", "says": "Signed out", "icon": "user", "tone": "neutral"},
     "user.password_changed": {
         "title": {"success": "Password changed", "refused": "Password change refused"},
         "says": {"success": "Changed the password[ of {on}]", "refused": "Password change refused[ for {on}]"},
-        "importance": "high",
+        "importance": "high", "icon": "key", "tone": "amber",
     },
     "user.password_reset_requested": {
         "title": {"success": "Password reset requested", "refused": "Password reset refused"},
         "says": {"success": "Requested a password reset[ for {on}]", "refused": "Password reset refused[ for {on}]"},
+        "icon": "key", "tone": "amber",
     },
     "activity.exported": {"title": "Activity exported", "says": "Exported the activity log[ ({rows} rows)]",
-                          "importance": "high"},
-    "activity.searched": {"title": "Activity searched", "says": "Searched the activity log", "importance": "low"},
+                          "importance": "high", "icon": "download", "tone": "neutral"},
+    "activity.searched": {"title": "Activity searched", "says": "Searched the activity log", "importance": "low",
+                          "icon": "log", "tone": "neutral"},
     "activity.stream_saved": {"title": "Activity stream saved",
-                              "says": "Saved the stream {stream}[ of {kind}] to {destination}", "importance": "high"},
+                              "says": "Saved the stream {stream}[ of {kind}] to {destination}", "importance": "high",
+                              "icon": "send", "tone": "violet"},
     "activity.stream_removed": {"title": "Activity stream removed", "says": "Removed the stream {stream}",
-                                "importance": "high"},
+                                "importance": "high", "icon": "send", "tone": "rose"},
     # track_changes: every row change, a detail unless staff or a partner made it by hand
     "data.created": {"title": "Record created", "says": "Created {on}", "importance": "low",
-                     "importance_for": {"staff": "normal", "api_key": "normal"}, "fold": True},
+                     "importance_for": {"staff": "normal", "api_key": "normal"}, "fold": True, "icon": "layers"},
     "data.updated": {"title": "Record updated", "says": "Updated {on}[: {changed}]", "importance": "low",
-                     "importance_for": {"staff": "normal", "api_key": "normal"}, "fold": True},
+                     "importance_for": {"staff": "normal", "api_key": "normal"}, "fold": True, "icon": "layers"},
     "data.deleted": {"title": "Record deleted", "says": "Deleted {on}", "importance": "low",
-                     "importance_for": {"staff": "normal", "api_key": "normal"}, "fold": True},
+                     "importance_for": {"staff": "normal", "api_key": "normal"}, "fold": True, "icon": "layers"},
 }
 BUILT_IN_ACTOR_TYPES = {"staff": "Staff", "system": "System", "visitor": "Visitor", "api_key": "API key"}
 
@@ -132,7 +145,8 @@ class Catalog:
     """The application's actions on top of the package's own; see the module's description."""
 
     def __init__(self, events: dict | None = None, entities: dict | None = None, fields: dict | None = None,
-                 values: dict | None = None, actor_types: dict | None = None, actor_names: dict | None = None):
+                 values: dict | None = None, actor_types: dict | None = None, actor_names: dict | None = None,
+                 computed: dict | None = None):
         self.events = {**BUILT_IN_EVENTS, **(events or {})}
         self.entities = dict(entities or {})
         self.fields = dict(fields or {})
@@ -140,6 +154,7 @@ class Catalog:
                        for field, spec in (values or {}).items()}
         self.actor_types = {**BUILT_IN_ACTOR_TYPES, **(actor_types or {})}
         self.actor_names = dict(actor_names or {})
+        self.computed = dict(computed or {})
         for action, entry in self.events.items():
             self._check_entry(action, entry)
 
@@ -154,6 +169,10 @@ class Catalog:
         for key in ("title", "says"):
             if isinstance(entry.get(key), dict) and set(entry[key]) - set(OUTCOMES):
                 raise ValueError(f"{action}: {key} outcomes must be among {OUTCOMES}")
+        if not all(isinstance(fact, (list, tuple)) and len(fact) == 2 for fact in entry.get("facts") or ()):
+            raise ValueError(f"{action}: facts are [label, value] pairs")
+        if entry.get("icon", ICONS[0]) not in ICONS or entry.get("tone", TONES[0]) not in TONES:
+            raise ValueError(f"{action}: icon must be one of {ICONS} and tone one of {TONES}")
 
     # what the reader asks
 
@@ -216,10 +235,19 @@ class Catalog:
                  "after": self.say(key, after.get(key))} for key in dict.fromkeys([*before, *after])]
 
     def details(self, row: dict) -> list:
-        """[{field, label, value}] of an event's metadata, said as a reader sees them; for its detail."""
-        metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+        """[{field, label, value}] of an event's metadata and the values computed from it, said as a
+        reader sees them; for its detail."""
+        metadata = self._with_computed(row.get("metadata") if isinstance(row.get("metadata"), dict) else {})
         return [{"field": key, "label": sentence_case(self.label(key)), "value": self.say(key, value)}
                 for key, value in metadata.items() if self.say(key, value) is not None]
+
+    def _with_computed(self, metadata: dict) -> dict:
+        for name, work_out in self.computed.items():
+            try:
+                metadata = {**metadata, name: work_out(metadata)}
+            except (KeyError, TypeError, ValueError, ArithmeticError):
+                pass   # not every event carries what it needs
+        return metadata
 
     def actor(self, row: dict) -> str:
         named = self.actor_names.get(f"{row.get('actor_type')}:{row.get('actor_id')}")
@@ -257,7 +285,7 @@ class Catalog:
                 ", ".join(one(c) for c in shown) + tail)
 
     def _values(self, row: dict, change_list: list | None) -> dict:
-        metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+        metadata = self._with_computed(row.get("metadata") if isinstance(row.get("metadata"), dict) else {})
         said = {key: _short(self.say(key, value)) for key, value in metadata.items()}
         for key, value in row.items():
             if isinstance(value, str) and value:
@@ -289,13 +317,24 @@ class Catalog:
         base = _by_outcome(entry.get("title"), "success") or sentence_case(words(action))
         return base if outcome == "success" else f"{base}: {outcome}"
 
+    def _facts(self, entry: dict, values: dict) -> list:
+        facts = []
+        for label, value in entry.get("facts") or ():
+            if all(values.get(name) for name in _required(value)):
+                facts.append({"label": _render(label, values), "value": _render(value, values)})
+        return facts
+
     def present(self, row: dict) -> dict:
-        """What a person reads for one event: its title, its sentence, its importance, who acted and
-        as what, the device, and its changes as a list."""
+        """What a person reads for one event: its title, its sentence, its key values (facts), its
+        importance, who acted and as what, the device, its changes as a list, and how a timeline marks it."""
         change_list = self.change_list(row.get("changes"))
+        values = self._values(row, change_list)
+        entry = self.events.get(row.get("action", "")) or {}
         return {
             "title": self.title(row.get("action", ""), row.get("outcome") or "success"),
-            "summary": self._sentence(row, self._values(row, change_list)),
+            "summary": self._sentence(row, values),
+            "facts": self._facts(entry, values) if (row.get("outcome") or "success") == "success" else [],
+            "icon": entry.get("icon"), "tone": entry.get("tone"),
             "importance": self.importance(row.get("action", ""), row.get("actor_type", "")),
             "actor": self.actor(row),
             "actor_label": self.actor_label(row.get("actor_type", "")),

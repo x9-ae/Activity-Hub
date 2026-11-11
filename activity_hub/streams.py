@@ -36,7 +36,7 @@ from urllib.parse import urlparse
 from activity_hub.database import get_client
 from activity_hub.logger import logger
 from activity_hub.catalog import Catalog
-from activity_hub.records import EVENTS_TABLE, ACCESS_TABLE, EVENT_COLUMNS, ACCESS_COLUMNS, utc_timestamp
+from activity_hub.records import EVENTS_TABLE, ACCESS_TABLE, EVENT_COLUMNS, ACCESS_COLUMNS, utc_timestamp, related_pairs
 from activity_hub import query as search_language
 from activity_hub.integrity import DEFAULT_LAG_SECONDS
 from activity_hub.reader import _moment
@@ -408,7 +408,7 @@ def _batch(client, catalog: Catalog, stream: dict, table: str, cursor: dict, set
                       else value) for key, value in row.items()}
         line["_received_at"] = row["received_at"]
         if "related" in line:
-            line["related"] = [list(pair) for pair in line["related"]]
+            line["related"] = related_pairs(line["related"])
             for key in ("changes", "metadata"):
                 line[key] = json.loads(line[key]) if line[key] else None
             line.update(catalog.present(line))

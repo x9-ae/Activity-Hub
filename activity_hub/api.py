@@ -81,6 +81,8 @@ class Search(BaseModel):
     view: Optional[Literal["all", "important", "problems"]] = None
     status_from: Optional[int] = None
     query: Optional[str] = Field(None, max_length=MAX_QUERY_LENGTH)
+    # events only: each also carries its metadata labelled, as its detail does
+    details: bool = False
     occurred_from: Optional[str] = None
     occurred_to: Optional[str] = None
     cursor: Optional[str] = None
@@ -312,7 +314,7 @@ def activity_router(*, get_reader, authorize, authorize_export=None, authorize_c
         criteria = _criteria(search, scope)
         if search.kind == "requests":
             return reader.search_access_logs(cursor=search.cursor, limit=limit, **criteria)
-        return reader.search_events(cursor=search.cursor, limit=limit, fold=fold, **criteria)
+        return reader.search_events(cursor=search.cursor, limit=limit, fold=fold, details=search.details, **criteria)
 
     @router.post("/search")
     async def search_log(search: Search, scope=Depends(authorize)):

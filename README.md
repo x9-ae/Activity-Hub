@@ -13,7 +13,7 @@ behind the package's back.
 ## Install
 
 ```bash
-pip install "activity-hub @ https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.7.0.tar.gz"
+pip install "activity-hub @ https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.8.0.tar.gz"
 ```
 
 (The release archive needs no git on the machine installing it.)
@@ -217,6 +217,13 @@ reader = ActivityReader(settings, catalog=CATALOG)
   which are left out of the default view. `importance_for` sets a different importance per actor
   type.
 - **`fold`:** marks a side effect of its request, shown inside the request's main event.
+- **`facts`:** the key values a timeline shows as chips, each `[label, value]` written like a
+  sentence: `[["{side}", "{volume}"], ["@", "{price}"], ["SL", "{sl}"]]`. A chip whose value is not
+  known is left out.
+- **`icon` and `tone`:** how a timeline marks the step, e.g. `"icon": "scissors", "tone": "amber"`.
+  A failed or refused step is always marked as a problem.
+- **`computed`** (on the catalog): values worked out from an event's metadata, usable in sentences,
+  facts and details, e.g. `{"left_volume": lambda m: float(m["volume"]) - float(m["closed"])}`.
 
 **The other arguments:**
 - `entities` names kinds of things.
@@ -315,7 +322,7 @@ app.include_router(activity_router(get_reader=lambda: reader, authorize=can_read
 
 | Route | Answers |
 |---|---|
-| `POST /search` | A page of events or API requests, with `view`, `query` (the search language), filters, `action`, a timeline (`related_type` + `related_id`), times and `cursor` |
+| `POST /search` | A page of events or API requests, with `view`, `query` (the search language), filters, `action`, a timeline (`related_type` + `related_id`), times and `cursor`. `details: true` adds each event's labelled details. Each event carries its `facts`, `icon` and `tone` |
 | `POST /chart` | Counts per period for the same search; the bar widens with the range (15 min, 1 h, 6 h, 1 day) |
 | `POST /values` | Each value of one field with its count, for pickers |
 | `POST /export` | One export page of up to 5000 rows: the view's records, each a row of its own. Each page is recorded as `activity.exported` |
@@ -367,7 +374,7 @@ The same repository ships the viewer every application shows: the log, an entity
 record's detail. It reads the routes above and nothing else.
 
 ```bash
-npm install "https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.7.0.tar.gz"
+npm install "https://github.com/x9-ae/Activity-Hub/archive/refs/tags/v0.8.0.tar.gz"
 ```
 
 ```tsx
@@ -396,8 +403,14 @@ const request = (path, { method, body }) => apiFetch(`/activity/${path}`, { meth
 
   To keep its search in the address, pass `params` and `onParamsChange`. For one entity's page,
   pass `entity`.
-- **`ActivityTimeline`** (one entity's story, oldest first): pass `action` and `newestFirst` for a
-  feed such as sign-ins.
+- **`ActivityTimeline`** (one entity's story, oldest first). Each step shows:
+  - its icon, title and time to the millisecond;
+  - who did it, as what and from where;
+  - its key values as chips, and an edit's before and after;
+  - on expand, its details and the record changes behind it, each record's fields one click away.
+
+  The title opens the full detail. Pass `action` and `newestFirst` for a feed such as sign-ins, and
+  `header={(events, partial) => …}` for a summary above the steps, made from the same events.
 - **`PanelHost`**: inside a modal sheet or dialog, provide an element in it, so the detail panel
   opens there.
 

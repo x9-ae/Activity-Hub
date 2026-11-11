@@ -1,6 +1,6 @@
 {
   "name": "activity-hub-viewer",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "The activity log viewer for Activity Hub: React components and an <activity-log> element",
   "type": "module",
   "files": [

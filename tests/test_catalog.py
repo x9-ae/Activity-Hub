@@ -253,3 +253,31 @@ def test_a_bulk_request_keeps_its_own_event_however_many_changes_it_made(setting
     rest = reader.search_events(view="all", tenant_id="3", limit=5, cursor=first["next_cursor"])
     assert rest["items"] == [], "the changes are under their event, not listed again"
     reader.close()
+
+
+def test_a_step_shows_its_key_values_as_chips_and_values_worked_out_from_others():
+    catalog = Catalog(events={"trade.partially_closed": {
+        "title": "Trade partly closed", "says": "Closed {closed} of #{ticket}[, {left} left]",
+        "facts": [["{side}", "{closed}"], ["@", "{price}"], ["SL", "{sl}"], ["Still open", "{left}"]],
+        "icon": "scissors", "tone": "amber"}},
+        values={"side": {"1": "BUY"}},
+        computed={"left": lambda m: round(float(m["volume"]) - float(m["closed"]), 8)})
+    said = catalog.present(event("trade.partially_closed", metadata={"side": "1", "closed": "0.2", "volume": "1.0",
+                                                                      "price": "2315.99", "ticket": "11623"}))
+    assert said["summary"] == "Closed 0.2 of #11623, 0.8 left", "what is left after the close, not before it"
+    assert said["facts"] == [{"label": "BUY", "value": "0.2"}, {"label": "@", "value": "2315.99"},
+                             {"label": "Still open", "value": "0.8"}], "a chip with no value is left out"
+    assert (said["icon"], said["tone"]) == ("scissors", "amber")
+    refused = catalog.present(event("trade.partially_closed", outcome="refused", metadata={"closed": "0.2"}))
+    assert refused["facts"] == [], "a refused step shows its reason, not values that never applied"
+    assert catalog.present(event("trade.partially_closed", metadata={"closed": "x"}))["summary"].startswith("Closed x")
+    with pytest.raises(ValueError, match="icon must be one of"):
+        Catalog(events={"x.y": {"title": "X", "icon": "rocket"}})
+    with pytest.raises(ValueError, match="facts are"):
+        Catalog(events={"x.y": {"title": "X", "facts": ["{a}"]}})
+
+
+def test_related_entities_read_the_same_from_either_driver_shape():
+    from activity_hub.records import related_pairs
+    assert related_pairs([{"type": "account", "id": "1"}, ("ticket", "2")]) == [["account", "1"], ["ticket", "2"]]
+    assert related_pairs(None) == []

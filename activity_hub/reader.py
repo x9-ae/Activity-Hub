@@ -8,7 +8,7 @@ from activity_hub.database import get_client
 from activity_hub.catalog import Catalog
 from activity_hub.integrity import verify, daily_seal, check_daily_seal
 from activity_hub import query as search_language
-from activity_hub.records import EVENTS_TABLE, ACCESS_TABLE, EVENT_COLUMNS, ACCESS_COLUMNS
+from activity_hub.records import EVENTS_TABLE, ACCESS_TABLE, EVENT_COLUMNS, ACCESS_COLUMNS, related_pairs
 
 MAX_PAGE_SIZE = 5000
 # filter name -> (column, ClickHouse type); a value is an exact match, a list matches any of its values
@@ -105,7 +105,8 @@ class ActivityReader:
 
     def search_events(self, *, action: str | None = None, related: tuple | None = None, occurred_from=None,
                       occurred_to=None, limit: int = 50, cursor: str | None = None, view: str | None = None,
-                      scope: dict | None = None, query: str | None = None, fold: bool = True, **filters) -> dict:
+                      scope: dict | None = None, query: str | None = None, fold: bool = True, details: bool = False,
+                      **filters) -> dict:
         """Events matching every filter given (see EVENT_FILTERS). action "trade.closed" matches
         exactly; "trade." matches every trade action. related=("account", "100234") finds events
         whose target or related entities include that account. view: see VIEWS; with a view, an
@@ -113,7 +114,8 @@ class ActivityReader:
         on their own (a page can then hold fewer than limit items). scope: the filters that bind those
         folded rows too (the caller's scope); app, environment and tenant_id among the filters when not
         given. query: the search language (activity_hub.query), e.g. 'actor:12 -result:success'.
-        fold=False keeps the view's records as rows (an export)."""
+        fold=False keeps the view's records as rows (an export). details: each event also carries its
+        metadata labelled, as its detail does (a timeline shows it without asking for each)."""
         clauses, parameters = self._event_criteria(action, related, occurred_from, occurred_to, filters, view, query)
         page = self._page(EVENTS_TABLE, EVENT_COLUMNS, clauses, parameters, limit, cursor)
         if view and fold:
@@ -121,6 +123,8 @@ class ActivityReader:
             page["items"] = self._fold(page["items"], bound, clauses, parameters)
         for item in page["items"]:
             self._present(item)
+            if details:
+                item["details"] = self.catalog.details(item)
         return page
 
     def count_over_time(self, kind: str, *, bucket_minutes: int, action: str | None = None,
@@ -477,7 +481,7 @@ class ActivityReader:
         if row.get("request_body"):
             row["request_body"] = json.loads(row["request_body"])
         if "related" in row:
-            row["related"] = [list(pair) for pair in row["related"]]
+            row["related"] = related_pairs(row["related"])
             for key in ("changes", "metadata"):
                 row[key] = json.loads(row[key]) if row[key] else None
             row["imported"] = bool(row["imported"])

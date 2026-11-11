@@ -60,6 +60,12 @@ def is_secret(key: str) -> bool:
     return bool(SECRET_KEY.search(key)) and not NOT_SECRET_SUFFIX.search(key)
 
 
+def related_pairs(value) -> list:
+    """[[type, id], …] from the related column: clickhouse-connect answers a named tuple as a tuple or,
+    in newer versions, as {"type", "id"}; unpacking the dict gave its key names."""
+    return [[pair["type"], pair["id"]] if isinstance(pair, dict) else list(pair) for pair in value or ()]
+
+
 def mask_secrets(value):
     """The value with every secret-looking key's value replaced, recursively."""
     if isinstance(value, dict):

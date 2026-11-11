@@ -8,7 +8,7 @@ from activity_hub.records import diff
 from activity_hub.integrity import seal_new_rows, verify, daily_seal, check_daily_seal
 from activity_hub.streams import StreamStore, deliver_streams
 
-__version__ = "0.7.0"
+__version__ = "0.8.0"
 
 __all__ = [
     "prepare_database",

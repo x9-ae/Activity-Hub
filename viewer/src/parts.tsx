@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import type { ActivityEvent, ApiCall, Row } from "./types"
+import type { ActivityEvent, ApiCall, Change, Fact, Row } from "./types"
 import { isEvent } from "./types"
 import { Icon } from "./icons"
 import { initials, relativeTime, requestActor, sentenceCase, timeOfDay, words } from "./format"
@@ -119,4 +119,66 @@ export function Message({ tone = "plain", children, action }: { tone?: "plain" |
 
 export function Skeleton({ rows = 6 }: { rows?: number }) {
   return <div className="ahv-skeleton" aria-busy="true">{Array.from({ length: rows }, (_, i) => <span key={i} />)}</div>
+}
+
+/** A step's key values as chips: [SELL 0.6] [@ 0.97496] [SL 0.97726]. */
+export function Facts({ facts }: { facts?: Fact[] }) {
+  if (!facts?.length) return null
+  return (
+    <span className="ahv-chips-row">
+      {facts.map((fact, i) => (
+        <span key={i} className="ahv-fact">{fact.label && <span className="ahv-dim">{fact.label}</span>}<span className="ahv-mono">{fact.value}</span></span>
+      ))}
+    </span>
+  )
+}
+
+/** Label and value pairs as a two-column table; empty values are left out. */
+export function KeyValues({ items, mono = false }: { items: [string, unknown][]; mono?: boolean }) {
+  const shown = items.filter(([, value]) => value !== null && value !== undefined && value !== "")
+  if (!shown.length) return null
+  return (
+    <div className="ahv-scroll-x">
+      <table className="ahv-kv">
+        <tbody>
+          {shown.map(([label, value], i) => (
+            <tr key={`${label}-${i}`}>
+              <th scope="row">{label}</th>
+              <td className={cx(mono && "ahv-mono")}>{typeof value === "object" ? JSON.stringify(value) : String(value)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+/** What a change did, field by field: the values a new record was given, those a removed one had,
+ * or each field's before and after. */
+export function ChangeTable({ changes, valueLabel = "Value" }: { changes: Change[]; valueLabel?: string }) {
+  if (!changes.length) return null
+  const created = changes.every((c) => c.before === null)
+  const deleted = changes.every((c) => c.after === null)
+  return (
+    <div className="ahv-scroll-x">
+      <table className="ahv-changes">
+        <thead>
+          <tr><th>Field</th>{created || deleted ? <th>{valueLabel}</th> : <><th>Before</th><th>After</th></>}</tr>
+        </thead>
+        <tbody>
+          {changes.map((c) => (
+            <tr key={c.field}>
+              <td>{c.label}</td>
+              {created || deleted ? <td className="ahv-mono">{(created ? c.after : c.before) ?? "—"}</td> : (
+                <>
+                  <td className="ahv-mono ahv-before">{c.before ?? "—"}</td>
+                  <td className="ahv-mono ahv-after">{c.after ?? "—"}</td>
+                </>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
 }

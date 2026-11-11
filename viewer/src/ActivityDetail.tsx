@@ -5,7 +5,10 @@ import { isEvent } from "./types"
 import { Icon } from "./icons"
 import { useRemote } from "./remote"
 import { dayText, sentenceCase, timeOfDay, toMs, words } from "./format"
-import { CallLine, Message, MethodTag, OutcomeTag, Skeleton, StatusTag, actorLabelOf, actorOf, cx, sealText } from "./parts"
+import {
+  CallLine, ChangeTable, Facts as Chips, KeyValues, Message, MethodTag, OutcomeTag, Skeleton, StatusTag, actorLabelOf, actorOf,
+  cx, sealText,
+} from "./parts"
 
 const SAME_REQUEST_LIMIT = 200
 
@@ -21,20 +24,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   )
 }
 
-function Facts({ items }: { items: [string, unknown][] }) {
-  const shown = items.filter(([, value]) => value !== null && value !== undefined && value !== "")
-  if (!shown.length) return null
-  return (
-    <dl className="ahv-facts">
-      {shown.map(([label, value]) => (
-        <div key={label}>
-          <dt>{label}</dt>
-          <dd>{typeof value === "object" ? JSON.stringify(value) : String(value)}</dd>
-        </div>
-      ))}
-    </dl>
-  )
-}
+const Facts = KeyValues
 
 function Changes({ event }: { event: ActivityEvent }) {
   const list = event.change_list
@@ -43,22 +33,7 @@ function Changes({ event }: { event: ActivityEvent }) {
   const deleted = list.every((c) => c.after === null)
   return (
     <Section title={created ? "Recorded values" : deleted ? "Values removed" : "Changes"}>
-      <div className="ahv-scroll-x">
-        <table className="ahv-changes">
-          <thead>
-            <tr><th>Field</th>{!created && <th>Before</th>}{!deleted && <th>After</th>}</tr>
-          </thead>
-          <tbody>
-            {list.map((c) => (
-              <tr key={c.field}>
-                <td>{c.label}</td>
-                {!created && <td className={cx("ahv-mono", !deleted && "ahv-before")}>{c.before ?? "—"}</td>}
-                {!deleted && <td className={cx("ahv-mono", !created && "ahv-after")}>{c.after ?? "—"}</td>}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <ChangeTable changes={list} />
     </Section>
   )
 }
@@ -215,6 +190,7 @@ function Body({ request, row, onOpen, onFocus, actorTypes, entities = {}, seal }
               {event.imported && <span className="ahv-tag">Imported</span>}
             </div>
             <h2>{event.summary}</h2>
+            <Chips facts={event.facts} />
           </>
         ) : (
           <>

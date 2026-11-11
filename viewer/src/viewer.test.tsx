@@ -271,7 +271,36 @@ describe("ActivityTimeline", () => {
     await screen.findByText("Opened BUY 0.10 EURUSD at 1.08321 (#32101)")
     const steps = screen.getAllByRole("listitem").map((li) => li.textContent)
     expect(steps[0]).toContain("Failed sign-in")
-    expect(bodies(request, "search")[0]).toMatchObject({ related_type: "ticket", related_id: "32101", view: "all" })
+    expect(bodies(request, "search")[0]).toMatchObject({ related_type: "ticket", related_id: "32101", view: "all", details: true })
+  })
+
+  it("shows each step's key values, and its details and record changes on expand", async () => {
+    const opened = {
+      ...OPENED, icon: "trendUp" as const, tone: "emerald" as const,
+      facts: [{ label: "BUY", value: "0.10" }, { label: "@", value: "1.08321" }],
+      details: [{ field: "book", label: "Book", value: "A-book" }],
+      children: [{ ...OPENED.children![0], change_list: [{ field: "volume", label: "Volume", before: null, after: "0.10" }] }],
+      children_count: 1,
+    }
+    const request = vi.fn(async (path: string) => {
+      if (path === "search") return { items: [opened], next_cursor: null }
+      if (path === "catalog") return CATALOG
+      return { event: opened, same_request: [], requests: [] }
+    }) as never as ActivityRequest
+    const header = vi.fn(() => <p>Ticket summary</p>)
+    render(<ActivityTimeline request={request} entity={{ type: "ticket", id: "32101" }} header={header} />)
+    expect(await screen.findByText("Ticket summary")).toBeTruthy()
+    expect(header).toHaveBeenCalledWith([opened], false)
+    expect(screen.getByText("1.08321")).toBeTruthy()
+    expect(screen.queryByText("Opened BUY 0.10 EURUSD at 1.08321 (#32101)")).toBeNull()
+
+    fireEvent.click(screen.getByRole("button", { name: /Details and 1 record change/ }))
+    expect(screen.getByText("A-book")).toBeTruthy()
+    fireEvent.click(screen.getByRole("button", { name: /position record 9/ }))
+    expect(screen.getByText("0.10", { selector: "td" })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole("button", { name: /Trade opened/ }))
+    expect(await screen.findByRole("dialog", { name: "Activity details" })).toBeTruthy()
   })
 })
 

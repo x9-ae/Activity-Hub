@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { ActivityEvent, ApiCall, Row } from "./types";
+import type { ActivityEvent, ApiCall, Change, Fact, Row } from "./types";
 export declare const cx: (...names: (string | false | null | undefined)[]) => string;
 export declare const actorOf: (row: Row) => string;
 export declare const actorLabelOf: (row: Row, actorTypes?: Record<string, string>) => string;
@@ -46,3 +46,18 @@ export declare function Message({ tone, children, action }: {
 export declare function Skeleton({ rows }: {
     rows?: number;
 }): import("react/jsx-runtime").JSX.Element;
+/** A step's key values as chips: [SELL 0.6] [@ 0.97496] [SL 0.97726]. */
+export declare function Facts({ facts }: {
+    facts?: Fact[];
+}): import("react/jsx-runtime").JSX.Element | null;
+/** Label and value pairs as a two-column table; empty values are left out. */
+export declare function KeyValues({ items, mono }: {
+    items: [string, unknown][];
+    mono?: boolean;
+}): import("react/jsx-runtime").JSX.Element | null;
+/** What a change did, field by field: the values a new record was given, those a removed one had,
+ * or each field's before and after. */
+export declare function ChangeTable({ changes, valueLabel }: {
+    changes: Change[];
+    valueLabel?: string;
+}): import("react/jsx-runtime").JSX.Element | null;

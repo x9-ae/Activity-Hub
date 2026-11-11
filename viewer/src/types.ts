@@ -1,3 +1,5 @@
+import type { IconName } from "./icons"
+
 /** Calls the application's activity routes (activity_hub.api), e.g. "search" with a JSON body. The
  * application adds its own sign-in and base path, and rejects with an Error whose message a person
  * can read. */
@@ -10,6 +12,8 @@ export type Importance = "high" | "normal" | "low"
 
 export type Change = { field: string; label: string; before: string | null; after: string | null }
 export type Detail = { field: string; label: string; value: string }
+export type Fact = { label: string; value: string }
+export type Tone = "sky" | "violet" | "amber" | "emerald" | "rose" | "neutral"
 
 export type ActivityEvent = {
   id: string
@@ -47,6 +51,11 @@ export type ActivityEvent = {
   actor_label: string
   device: string | null
   change_list: Change[] | null
+  /** the few values a timeline shows as chips, from the catalog */
+  facts?: Fact[]
+  /** how a timeline marks the step, from the catalog */
+  icon?: IconName | null
+  tone?: Tone | null
   /** with a view: the row changes the same request made */
   children?: ActivityEvent[]
   /** how many row changes the request made; children holds the first of them */
@@ -94,6 +103,8 @@ export type Search = {
   view?: View
   /** the search language, e.g. "actor:12 action:trade.* -result:success" */
   query?: string
+  /** events also carry their metadata labelled, as their detail does */
+  details?: boolean
   status_from?: number
   occurred_from?: string
   occurred_to?: string
