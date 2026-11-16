@@ -28,7 +28,7 @@ MAX_JSON_BYTES = 64 * 1024
 MAX_TEXT_LENGTH = 2048
 # keys whose values are never stored, at any depth of a recorded request body; a key that only
 # describes a secret (token_expire_time, password_type, api_key_count) is not one
-SECRET_KEY = re.compile(r"pass|secret|token|api_?key|access_?key|private_?key|credential|authori[sz]ation|cvv|otp|^pin$",
+SECRET_KEY = re.compile(r"pass|secret|token|api[-_]?key|access[-_]?key|private[-_]?key|subscription[-_]?key|credential|authori[sz]ation|cvv|otp|^pin$",
                         re.IGNORECASE)
 NOT_SECRET_SUFFIX = re.compile(r"(_at|_time|_date|_type|_types|_count|_mode|_expiry|_expires|_length|_status|_id)$",
                                re.IGNORECASE)
@@ -58,6 +58,12 @@ def _json(name: str, value) -> str:
 
 def is_secret(key: str) -> bool:
     return bool(SECRET_KEY.search(key)) and not NOT_SECRET_SUFFIX.search(key)
+
+
+def related_pairs(value) -> list:
+    """[[type, id], …] from the related column: clickhouse-connect answers a named tuple as a tuple or,
+    in newer versions, as {"type", "id"}; unpacking the dict gave its key names."""
+    return [[pair["type"], pair["id"]] if isinstance(pair, dict) else list(pair) for pair in value or ()]
 
 
 def mask_secrets(value):

@@ -1,18 +1,22 @@
 from activity_hub.schema import prepare_database, create_append_only_user
 from activity_hub.hub import ActivityHub
 from activity_hub.reader import ActivityReader
+from activity_hub.catalog import Catalog, device
 from activity_hub.context import set_actor, activity_context, current_context, forwarded_headers
 from activity_hub.asgi import ActivityMiddleware
 from activity_hub.records import diff
 from activity_hub.integrity import seal_new_rows, verify, daily_seal, check_daily_seal
+from activity_hub.streams import StreamStore, deliver_streams
 
-__version__ = "0.5.1"
+__version__ = "0.9.0"
 
 __all__ = [
     "prepare_database",
     "create_append_only_user",
     "ActivityHub",
     "ActivityReader",
+    "Catalog",
+    "device",
     "ActivityMiddleware",
     "set_actor",
     "activity_context",
@@ -22,5 +26,7 @@ __all__ = [
     "verify",
     "daily_seal",
     "check_daily_seal",
+    "StreamStore",
+    "deliver_streams",
     "diff",
 ]

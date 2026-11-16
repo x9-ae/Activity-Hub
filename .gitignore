@@ -10,3 +10,8 @@ venv/
 .vscode/
 .DS_Store
 docs/*.md
+node_modules/
+# the viewer's build is part of the release archive apps install from
+!viewer/dist/
+*.tgz
+viewer/demo/
