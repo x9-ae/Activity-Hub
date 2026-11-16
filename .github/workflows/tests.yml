@@ -51,4 +51,5 @@ jobs:
       - run: npm run build
 
       # apps install the built viewer from the release archive: the committed build must be this one
-      - run: git diff --exit-code viewer/dist || (echo "viewer/dist is out of date: run npm run build and commit it" && exit 1)
+      - name: Committed viewer build matches the source
+        run: git diff --exit-code viewer/dist || (echo "viewer/dist is out of date - run npm run build and commit it" && exit 1)
