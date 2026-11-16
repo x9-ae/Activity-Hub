@@ -3,8 +3,8 @@ import type { ActivityEvent, ActivityRequest, Catalog, Page, Row } from "./types
 import { useRemote } from "./remote"
 import { dayText, initials, relativeTime, timeOfDay, toMs, words } from "./format"
 import { ActivityDetail } from "./ActivityDetail"
-import { Icon, type IconName } from "./icons"
-import { ChangeTable, Facts, KeyValues, Message, OutcomeTag, Skeleton, cx } from "./parts"
+import { Icon } from "./icons"
+import { ChangeTable, Facts, KeyValues, Message, OutcomeTag, Skeleton, cx, markOf } from "./parts"
 
 const LIMIT = 500
 
@@ -22,12 +22,14 @@ export type ActivityTimelineProps = {
   header?: (events: ActivityEvent[], partial: boolean) => ReactNode
   /** shown under the last step when older steps were left out, e.g. a link to the full log */
   more?: ReactNode
+  /** a customer's own feed: each step's title, sentence, when and from where, nothing more */
+  simple?: boolean
   className?: string
 }
 
 /** One entity's story: each step with who did it, from where and its key values, its changes and
  * the record changes behind it one click away, and its full detail on its title. */
-export function ActivityTimeline({ request, entity, view = "all", action, newestFirst = false, header, more, className }: ActivityTimelineProps) {
+export function ActivityTimeline({ request, entity, view = "all", action, newestFirst = false, header, more, simple = false, className }: ActivityTimelineProps) {
   // no story to tell until both are known: never the whole log
   const key = entity.type && entity.id ? `${entity.type}:${entity.id}:${view}:${action ?? ""}` : null
   const steps = useRemote<Page<ActivityEvent>>(key, () => request("search", {
@@ -41,7 +43,7 @@ export function ActivityTimeline({ request, entity, view = "all", action, newest
   const partial = Boolean(steps.data?.next_cursor)
 
   return (
-    <div className={cx("ahv ahv-timeline", className)}>
+    <div className={cx("ahv ahv-timeline", simple && "ahv-timeline-simple", className)}>
       {steps.error ? (
         <Message tone="bad" action={<button type="button" className="ahv-button" onClick={steps.refresh}>Retry</button>}>
           Couldn't load: {steps.error.message}
@@ -52,9 +54,9 @@ export function ActivityTimeline({ request, entity, view = "all", action, newest
         <>
           {header?.(items.length ? [...items].reverse() : [], partial)}
           {partial && <p className="ahv-dim ahv-small">Showing the newest {LIMIT} steps.{more && <> {more}</>}</p>}
-          <h3 className="ahv-eyebrow">{events.length} step{events.length === 1 ? "" : "s"}, {newestFirst ? "newest" : "oldest"} first</h3>
+          {!simple && <h3 className="ahv-eyebrow">{events.length} step{events.length === 1 ? "" : "s"}, {newestFirst ? "newest" : "oldest"} first</h3>}
           <ol className="ahv-steps">
-            {events.map((event) => <Step key={event.id} event={event} onOpen={setSelected} />)}
+            {events.map((event) => simple ? <SimpleStep key={event.id} event={event} /> : <Step key={event.id} event={event} onOpen={setSelected} />)}
           </ol>
         </>
       )}
@@ -62,11 +64,6 @@ export function ActivityTimeline({ request, entity, view = "all", action, newest
         actorTypes={catalog.data?.actor_types} entities={catalog.data?.entities} />
     </div>
   )
-}
-
-const markOf = (event: ActivityEvent): { icon: IconName; tone: string } => {
-  if (event.outcome !== "success") return { icon: "alert", tone: "rose" }
-  return { icon: event.icon ?? (event.category === "data" ? "layers" : "log"), tone: event.tone ?? "neutral" }
 }
 
 function Step({ event, onOpen }: { event: ActivityEvent; onOpen: (row: Row) => void }) {
@@ -116,14 +113,37 @@ function Step({ event, onOpen }: { event: ActivityEvent; onOpen: (row: Row) => v
   )
 }
 
-/** Who did a step and from where, on one line. */
-function ByLine({ event }: { event: ActivityEvent }) {
+/** A step in a customer's own feed: what happened, in one sentence, when and from where. */
+function SimpleStep({ event }: { event: ActivityEvent }) {
+  const { icon, tone } = markOf(event)
+  return (
+    <li className={`ahv-step ahv-tone-${tone}`}>
+      <span className="ahv-step-icon" aria-hidden="true"><Icon name={icon} size={16} /></span>
+      <div className="ahv-step-main">
+        <div className="ahv-step-head">
+          <div className="ahv-stack">
+            <span className="ahv-step-title">{event.title}<OutcomeTag outcome={event.outcome} /></span>
+            {event.summary !== event.title && <p className="ahv-sentence">{event.summary}</p>}
+            <ByLine event={event} simple />
+          </div>
+          <span className="ahv-step-when" title={`${event.occurred_at} UTC`}>
+            <span className="ahv-mono">{timeOfDay(event.occurred_at)}</span>
+            <span className="ahv-dim">{relativeTime(event.occurred_at) || dayText(toMs(event.occurred_at))}</span>
+          </span>
+        </div>
+      </div>
+    </li>
+  )
+}
+
+/** Who did a step and from where, on one line; simple leaves out the role. */
+function ByLine({ event, simple = false }: { event: ActivityEvent; simple?: boolean }) {
   return (
     <span className="ahv-byline">
       <span className={cx("ahv-avatar ahv-avatar-small", event.actor_type === "system" && "ahv-avatar-system")} aria-hidden="true">
         {initials(event.actor)}
       </span>
-      {[event.actor, event.actor_label, event.origin && words(event.origin).toUpperCase(),
+      {[event.actor, !simple && event.actor_label, event.origin && words(event.origin).toUpperCase(),
         event.actor_type !== "system" && event.device, event.country, event.ip]
         .filter(Boolean).map((part, i) => <span key={i} className={cx(i === 0 ? "ahv-strong" : "ahv-sep")}>{part}</span>)}
     </span>

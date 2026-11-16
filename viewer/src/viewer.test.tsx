@@ -78,8 +78,8 @@ describe("ActivityLog", () => {
     render(<ActivityLog request={request} canExport />)
     expect(await screen.findByText("Opened BUY 0.10 EURUSD at 1.08321 (#32101)")).toBeTruthy()
     expect(screen.getByText("Failed sign-in to account 5: wrong password")).toBeTruthy()
-    expect(screen.getByTitle("1 record change made by the same request")).toBeTruthy()
-    expect(await screen.findByText("intact")).toBeTruthy()
+    expect(screen.getByText("1 change")).toBeTruthy()
+    expect(await screen.findByTitle(/: intact/)).toBeTruthy()
     const first = bodies(request, "search")[0]
     expect(first.view).toBe("important")
     expect(String(first.occurred_from)).toMatch(/^\d{4}-\d\d-\d\d \d\d:\d\d:00$/)
@@ -235,6 +235,23 @@ describe("the keyboard and the tabs", () => {
   })
 })
 
+describe("the chart", () => {
+  it("hides on request and stays hidden next time", async () => {
+    localStorage.removeItem("activity-hub-chart")
+    const request = fakeRequest()
+    const { unmount } = render(<ActivityLog request={request} />)
+    await screen.findByText("Opened BUY 0.10 EURUSD at 1.08321 (#32101)")
+    fireEvent.click(screen.getByRole("button", { name: /Hide chart/ }))
+    expect(localStorage.getItem("activity-hub-chart")).toBe("hidden")
+    unmount()
+    const calls = (request as never as { mock: { calls: [string][] } }).mock.calls.length
+    render(<ActivityLog request={request} />)
+    expect(await screen.findByRole("button", { name: /Show chart/ })).toBeTruthy()
+    await screen.findByText("Opened BUY 0.10 EURUSD at 1.08321 (#32101)")
+    expect((request as never as { mock: { calls: [string][] } }).mock.calls.slice(calls).some(([p]) => p === "chart")).toBe(false)
+  })
+})
+
 describe("integrity", () => {
   it("marks each row sealed or waiting, and checks a day", async () => {
     const request = fakeRequest()
@@ -242,7 +259,7 @@ describe("integrity", () => {
     await screen.findByText("Opened BUY 0.10 EURUSD at 1.08321 (#32101)")
     await waitFor(() => expect(screen.getAllByLabelText(/^Sealed/).length).toBe(1))
     expect(screen.getAllByLabelText(/^Waiting for its seal/).length).toBe(1)
-    fireEvent.click(await screen.findByRole("button", { name: "Check integrity" }))
+    fireEvent.click(await screen.findByRole("button", { name: "Verify" }))
     fireEvent.change(screen.getByLabelText("Day (UTC)"), { target: { value: "2026-11-09" } })
     fireEvent.click(screen.getByRole("button", { name: /Check this day/ }))
     expect(await screen.findByText("2026-11-09: 1 problem(s) found.")).toBeTruthy()
@@ -258,9 +275,9 @@ describe("integrity checks", () => {
       return base(path, init as never)
     })
     render(<ActivityLog request={request} />)
-    await screen.findByText("intact")
+    await screen.findByTitle(/: intact/)
     await waitFor(() => expect(request.mock.calls.some(([p]) => p === "integrity")).toBe(true))
-    expect(screen.queryByRole("button", { name: "Check integrity" })).toBeNull()
+    expect(screen.queryByRole("button", { name: "Verify" })).toBeNull()
   })
 })
 
@@ -302,56 +319,18 @@ describe("ActivityTimeline", () => {
     fireEvent.click(screen.getByRole("button", { name: /Trade opened/ }))
     expect(await screen.findByRole("dialog", { name: "Activity details" })).toBeTruthy()
   })
-})
 
-describe("Streams", () => {
-  const STREAM = { id: "s1", name: "CRM intake", kind: "events", query: "action:trade.*", destination: "webhook",
-    target: { url: "https://crm.example.com/in", headers: { Authorization: "" } }, enabled: true, state: "failing",
-    error: "the destination answered 503 Service Unavailable", delivered: 1204, last_delivered_at: "2026-11-10 11:50:00.000",
-    delivered_through: "2026-11-10 11:50:00.000" }
-
-  function streamsRequest() {
-    const base = fakeRequest()
-    return vi.fn(async (path: string, init: { method: string; body?: unknown }) => {
-      if (path === "streams") return init.method === "GET" ? { enabled: true, streams: [STREAM] } : { ...STREAM, ...(init.body as object) }
-      if (path === "streams/s1/test") return { ok: true, error: "" }
-      return base(path, init as never)
-    }) as never as ReturnType<typeof fakeRequest>
-  }
-
-  it("shows each stream's state and saves a new one with a fresh signing secret", async () => {
-    const request = streamsRequest()
-    render(<ActivityLog request={request} canExport />)
-    fireEvent.click(await screen.findByRole("button", { name: /Streams/ }))
-    expect(screen.getByText("CRM intake")).toBeTruthy()
-    expect(screen.getByText("Failing")).toBeTruthy()
-    expect(screen.getByText(/503 Service Unavailable/)).toBeTruthy()
-
-    fireEvent.click(screen.getByRole("button", { name: "Send test" }))
-    expect(await screen.findByText("CRM intake: the test line was delivered.")).toBeTruthy()
-
-    fireEvent.click(screen.getByRole("button", { name: "Edit" }))
-    expect((screen.getByPlaceholderText("Authorization: Bearer …") as HTMLTextAreaElement).value).toBe("Authorization: ")
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
-
-    fireEvent.click(screen.getByRole("button", { name: "Add stream" }))
-    fireEvent.change(screen.getByPlaceholderText("CRM intake"), { target: { value: "Archive" } })
-    fireEvent.change(screen.getByPlaceholderText("https://crm.example.com/activity"), { target: { value: "https://archive.example.com/in" } })
-    fireEvent.submit(screen.getByRole("button", { name: "Add stream" }).closest("form")!)
-    await waitFor(() => expect(bodies(request, "streams").filter(Boolean)).toHaveLength(1))
-    const saved = bodies(request, "streams").find(Boolean) as { name: string; secret: string; target: { url: string }; start: string }
-    expect(saved.name).toBe("Archive")
-    expect(saved.secret).toMatch(/^[0-9a-f]{48}$/)
-    expect(saved.target).toEqual({ url: "https://archive.example.com/in" })
-    expect((saved as unknown as { secret_headers: object }).secret_headers).toEqual({})
-    expect(saved.start).toBe("now")
-  })
-
-  it("is not offered without the export permission or while the application keeps no streams", async () => {
-    const request = streamsRequest()
-    render(<ActivityLog request={request} />)
-    await screen.findByText("Opened BUY 0.10 EURUSD at 1.08321 (#32101)")
-    expect(screen.queryByRole("button", { name: /Streams/ })).toBeNull()
-    expect(request.mock.calls.some(([p]) => p === "streams")).toBe(false)
+  it("keeps a customer's own feed to each step's sentence, when and where", async () => {
+    const opened = { ...OPENED, facts: [{ label: "BUY", value: "0.10" }], details: [{ field: "book", label: "Book", value: "A-book" }] }
+    const request = vi.fn(async (path: string) => {
+      if (path === "search") return { items: [opened], next_cursor: null }
+      return CATALOG
+    }) as never as ActivityRequest
+    render(<ActivityTimeline request={request} entity={{ type: "account", id: "100234" }} newestFirst simple />)
+    expect(await screen.findByText("Opened BUY 0.10 EURUSD at 1.08321 (#32101)")).toBeTruthy()
+    expect(screen.queryByText(/step, newest first/)).toBeNull()
+    expect(screen.queryByText("Client")).toBeNull()
+    expect(screen.queryByRole("button", { name: /Details/ })).toBeNull()
+    expect(screen.queryByText("0.10")).toBeNull()
   })
 })

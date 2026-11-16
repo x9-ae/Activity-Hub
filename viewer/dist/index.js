@@ -1,7 +1,7 @@
-import { jsx as t, jsxs as n, Fragment as U } from "react/jsx-runtime";
-import { useState as T, useRef as D, useEffect as K, useCallback as Be, useMemo as oe, useContext as Qt, createContext as ea, useId as ta, Fragment as aa } from "react";
-import { createPortal as na } from "react-dom";
-const F = (e) => "action" in e, sa = {
+import { jsx as t, jsxs as s, Fragment as H } from "react/jsx-runtime";
+import { useState as $, useRef as R, useEffect as V, useCallback as We, useMemo as de, useContext as Vt, createContext as Jt, useId as Kt, useLayoutEffect as Gt, Fragment as Xt } from "react";
+import { createPortal as Yt } from "react-dom";
+const F = (e) => "action" in e, Zt = {
   search: "M21 21l-4.3-4.3M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z",
   download: "M12 15V3m0 12-4-4m4 4 4-4M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4",
   refresh: "M21 12a9 9 0 0 1-15.3 6.4L3 16m0 5v-5h5M3 12a9 9 0 0 1 15.3-6.4L21 8m0-5v5h-5",
@@ -18,7 +18,6 @@ const F = (e) => "action" in e, sa = {
   copy: "M8 8h12v12H8zM16 8V4H4v12h4",
   check: "M20 6 9 17l-5-5",
   log: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
-  send: "M14.5 21.7a.5.5 0 0 0 .9 0L22 2.6a.5.5 0 0 0-.6-.6L2.3 8.6a.5.5 0 0 0 0 .9l8 3.2a2 2 0 0 1 1 1zM21.9 2.1 10.9 13.1",
   clock: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 6v6l4 2",
   bolt: "M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z",
   pencil: "M21.17 6.81a2.83 2.83 0 0 0-4-4L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5zM15 5l4 4",
@@ -26,12 +25,13 @@ const F = (e) => "action" in e, sa = {
   checkCircle: "M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3",
   xCircle: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM15 9l-6 6M9 9l6 6",
   trendUp: "M22 7 13.5 15.5 8.5 10.5 2 17M16 7h6v6",
+  chart: "M3 3v18h18M8 17v-5M13 17V7M18 17v-9",
   trendDown: "M22 17 13.5 8.5 8.5 13.5 2 7M16 17h6v-6",
   key: "M2.59 18.4A2 2 0 0 0 2 19.82V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.17a2 2 0 0 0 1.42-.59l.81-.81a6.5 6.5 0 1 0-4.24-4.24zM16.5 7.5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z",
   money: "M2 6h20v12H2zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 12h.01M18 12h.01",
   shield: "M20 13c0 5-3.5 7.5-7.7 9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"
 };
-function O({ name: e, size: a = 16, ...s }) {
+function E({ name: e, size: a = 16, ...n }) {
   return /* @__PURE__ */ t(
     "svg",
     {
@@ -45,93 +45,93 @@ function O({ name: e, size: a = 16, ...s }) {
       strokeLinejoin: "round",
       "aria-hidden": "true",
       focusable: "false",
-      ...s,
-      children: /* @__PURE__ */ t("path", { d: sa[e] })
+      ...n,
+      children: /* @__PURE__ */ t("path", { d: Zt[e] })
     }
   );
 }
-function I(e, a, s) {
-  const [r, l] = T({ loading: e !== null }), o = D(0), c = D(a);
-  c.current = a;
-  const u = Be(() => {
+function j(e, a, n) {
+  const [r, i] = $({ loading: e !== null }), c = R(0), o = R(a);
+  o.current = a;
+  const h = We(() => {
     if (e === null) return;
-    const b = ++o.current;
-    l((k) => ({ ...k, loading: !0 })), c.current().then(
-      (k) => b === o.current && l({ data: k, loading: !1 }),
-      (k) => b === o.current && l((y) => ({ data: y.data, error: k, loading: !1 }))
+    const N = ++c.current;
+    i((y) => ({ ...y, loading: !0 })), o.current().then(
+      (y) => N === c.current && i({ data: y, loading: !1 }),
+      (y) => N === c.current && i((g) => ({ data: g.data, error: y, loading: !1 }))
     );
   }, [e]);
-  K(() => {
-    l({ loading: e !== null }), u();
-  }, [e, u]);
-  const h = !!r.error;
-  return K(() => {
-    if (!s || e === null || h) return;
-    const b = setInterval(u, s);
-    return () => clearInterval(b);
-  }, [s, e, h, u]), { ...r, refresh: u };
+  V(() => {
+    i({ loading: e !== null }), h();
+  }, [e, h]);
+  const d = !!r.error;
+  return V(() => {
+    if (!n || e === null || d) return;
+    const N = setInterval(h, n);
+    return () => clearInterval(N);
+  }, [n, e, d, h]), { ...r, refresh: h };
 }
-const qe = 20;
-function la(e, a, s, r, l) {
-  var d;
-  const o = a && JSON.stringify(a), [c, u] = T([]), [h, b] = T(!1), [k, y] = T({ loading: !1 }), v = D(o);
-  v.current = o;
-  const g = I(
-    o,
-    () => e("search", { method: "POST", body: { ...a, limit: s } }),
-    r ? l : void 0
-  ), N = D(0);
-  K(() => {
-    g.data && (N.current += 1, u([g.data]), b(!1), y({ loading: !1 }));
-  }, [g.data]), K(() => {
-    u([]), y({ loading: !1 });
-  }, [o]);
-  const p = ((d = c[c.length - 1]) == null ? void 0 : d.next_cursor) ?? null, M = Be(() => {
-    if (!p || k.loading || !a) return;
-    y({ loading: !0 });
-    const f = o, _ = N.current;
-    e("search", { method: "POST", body: { ...a, limit: s, cursor: p } }).then(
-      (q) => {
-        v.current !== f || N.current !== _ || (u((E) => [...E, q].slice(-qe)), c.length >= qe && b(!0), y({ loading: !1 }));
+const xe = 20;
+function Qt(e, a, n, r, i) {
+  var D;
+  const c = a && JSON.stringify(a), [o, h] = $([]), [d, N] = $(!1), [y, g] = $({ loading: !1 }), m = R(c);
+  m.current = c;
+  const v = j(
+    c,
+    () => e("search", { method: "POST", body: { ...a, limit: n } }),
+    r ? i : void 0
+  ), b = R(0);
+  V(() => {
+    v.data && (b.current += 1, h([v.data]), N(!1), g({ loading: !1 }));
+  }, [v.data]), V(() => {
+    h([]), g({ loading: !1 });
+  }, [c]);
+  const p = ((D = o[o.length - 1]) == null ? void 0 : D.next_cursor) ?? null, M = We(() => {
+    if (!p || y.loading || !a) return;
+    g({ loading: !0 });
+    const f = c, C = b.current;
+    e("search", { method: "POST", body: { ...a, limit: n, cursor: p } }).then(
+      (L) => {
+        m.current !== f || b.current !== C || (h((T) => [...T, L].slice(-xe)), o.length >= xe && N(!0), g({ loading: !1 }));
       },
-      (q) => v.current === f && N.current === _ && y({ loading: !1, error: q })
+      (L) => m.current === f && b.current === C && g({ loading: !1, error: L })
     );
-  }, [p, k.loading, a, o, e, s, c.length]);
+  }, [p, y.loading, a, c, e, n, o.length]);
   return {
-    rows: c.flatMap((f) => f.items),
-    trimmed: h,
+    rows: o.flatMap((f) => f.items),
+    trimmed: d,
     hasMore: !!p && !r,
-    loading: g.loading && !c.length,
-    refreshing: g.loading,
-    error: g.error,
-    more: k,
+    loading: v.loading && !o.length,
+    refreshing: v.loading,
+    error: v.error,
+    more: y,
     loadMore: M,
-    refresh: g.refresh,
-    pageCount: c.length
+    refresh: v.refresh,
+    pageCount: o.length
   };
 }
-const W = (e) => Date.parse(`${e.slice(0, 23).replace(" ", "T")}Z`), A = (e) => e.replace(/[._]+/g, " ").trim(), ce = (e) => e.charAt(0).toUpperCase() + e.slice(1), Ot = 864e5, ia = [[60, "second"], [60, "minute"], [24, "hour"], [7, "day"]], ra = new Intl.RelativeTimeFormat(void 0, { numeric: "auto", style: "short" });
-function Fe(e, a = Date.now()) {
-  let s = (W(e) - a) / 1e3;
-  for (const [r, l] of ia) {
-    if (Math.abs(s) < r) return ra.format(Math.round(s), l);
-    s /= r;
+const I = (e) => Date.parse(`${e.slice(0, 23).replace(" ", "T")}Z`), P = (e) => e.replace(/[._]+/g, " ").trim(), he = (e) => e.charAt(0).toUpperCase() + e.slice(1), kt = 864e5, ea = [[60, "second"], [60, "minute"], [24, "hour"], [7, "day"]], ta = new Intl.RelativeTimeFormat(void 0, { numeric: "auto", style: "short" });
+function Be(e, a = Date.now()) {
+  let n = (I(e) - a) / 1e3;
+  for (const [r, i] of ea) {
+    if (Math.abs(n) < r) return ta.format(Math.round(n), i);
+    n /= r;
   }
   return "";
 }
-const ge = (e, a) => new Date(e).toLocaleString(void 0, { ...a, timeZone: "UTC" }), ee = (e) => ge(e, { day: "numeric", month: "short", year: "numeric" }), Y = (e) => ge(e, { day: "numeric", month: "short" }), Re = (e) => ge(e, { hour: "2-digit", minute: "2-digit", hour12: !1 });
-function oa(e, a = Date.now()) {
-  const s = e.slice(0, 10);
-  return s === new Date(a).toISOString().slice(0, 10) ? "Today" : s === new Date(a - Ot).toISOString().slice(0, 10) ? "Yesterday" : ge(W(`${s} 00:00:00`), { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+const Ne = (e, a) => new Date(e).toLocaleString(void 0, { ...a, timeZone: "UTC" }), Z = (e) => Ne(e, { day: "numeric", month: "short", year: "numeric" }), te = (e) => Ne(e, { day: "numeric", month: "short" }), De = (e) => Ne(e, { hour: "2-digit", minute: "2-digit", hour12: !1 });
+function aa(e, a = Date.now()) {
+  const n = e.slice(0, 10);
+  return n === new Date(a).toISOString().slice(0, 10) ? "Today" : n === new Date(a - kt).toISOString().slice(0, 10) ? "Yesterday" : Ne(I(`${n} 00:00:00`), { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 }
-const be = (e) => e.slice(11, 23);
-function xt(e) {
-  var s, r;
+const ue = (e) => e.slice(11, 23);
+function St(e) {
+  var n, r;
   if (/^[\d#]/.test(e)) return "#";
   const a = e.split(/[\s@._-]+/).filter(Boolean);
-  return ((((s = a[0]) == null ? void 0 : s[0]) ?? "?") + (((r = a[1]) == null ? void 0 : r[0]) ?? "")).toUpperCase();
+  return ((((n = a[0]) == null ? void 0 : n[0]) ?? "?") + (((r = a[1]) == null ? void 0 : r[0]) ?? "")).toUpperCase();
 }
-const ca = (e) => e.actor_name || (e.actor_type === "system" ? ce(A(e.actor_id)) || "System" : e.actor_id || "Anonymous"), Ae = (e) => /^\d{4}-\d{2}-\d{2}$/.test(e) && !Number.isNaN(Date.parse(`${e}T00:00:00Z`)), De = (e) => `${e} 00:00:00`, da = (e) => `${new Date(Date.parse(`${e}T00:00:00Z`) + Ot).toISOString().slice(0, 10)} 00:00:00`, ha = (e, a = Date.now()) => new Date(a - e * 6e4).toISOString().slice(0, 19).replace("T", " "), ua = (e, a, s = `${a}s`) => `${e.toLocaleString()} ${e === 1 ? a : s}`, ve = 1e5, ma = [
+const na = (e) => e.actor_name || (e.actor_type === "system" ? he(P(e.actor_id)) || "System" : e.actor_id || "Anonymous"), Ae = (e) => /^\d{4}-\d{2}-\d{2}$/.test(e) && !Number.isNaN(Date.parse(`${e}T00:00:00Z`)), Re = (e) => `${e} 00:00:00`, sa = (e) => `${new Date(Date.parse(`${e}T00:00:00Z`) + kt).toISOString().slice(0, 10)} 00:00:00`, la = (e, a = Date.now()) => new Date(a - e * 6e4).toISOString().slice(0, 19).replace("T", " "), ra = (e, a, n = `${a}s`) => `${e.toLocaleString()} ${e === 1 ? a : n}`, ge = 1e5, ia = [
   "occurred_at",
   "title",
   "summary",
@@ -155,7 +155,7 @@ const ca = (e) => e.actor_name || (e.actor_type === "system" ? ce(A(e.actor_id))
   "changes",
   "metadata",
   "id"
-], va = [
+], ca = [
   "occurred_at",
   "method",
   "route",
@@ -175,45 +175,45 @@ const ca = (e) => e.actor_name || (e.actor_type === "system" ? ce(A(e.actor_id))
   "request_body",
   "id"
 ];
-async function pa(e, a, s) {
+async function oa(e, a, n) {
   const r = [];
-  let l = null;
+  let i = null;
   do {
-    const o = await e("export", { method: "POST", body: { ...a, cursor: l } });
-    r.push(...o.items), s(r.length), l = o.next_cursor;
-  } while (l && r.length < ve);
-  return { rows: r.slice(0, ve), more: !!l || r.length > ve };
+    const c = await e("export", { method: "POST", body: { ...a, cursor: i } });
+    r.push(...c.items), n(r.length), i = c.next_cursor;
+  } while (i && r.length < ge);
+  return { rows: r.slice(0, ge), more: !!i || r.length > ge };
 }
-function fa(e) {
+function da(e) {
   let a = e == null ? "" : typeof e == "object" ? JSON.stringify(e) : String(e);
   return /^[=+\-@\t\r]/.test(a) && (a = `'${a}`), /[",\n\r]/.test(a) ? `"${a.replace(/"/g, '""')}"` : a;
 }
-function ga(e, a) {
-  const s = e === "events" ? ma : va;
-  return `\uFEFF${[s.join(","), ...a.map((l) => s.map((o) => fa(l[o])).join(","))].join(`\r
+function ha(e, a) {
+  const n = e === "events" ? ia : ca;
+  return `\uFEFF${[n.join(","), ...a.map((i) => n.map((c) => da(i[c])).join(","))].join(`\r
 `)}\r
 `;
 }
-const ba = (e) => e.map((a) => {
-  const { children: s, ...r } = a;
+const ua = (e) => e.map((a) => {
+  const { children: n, ...r } = a;
   return JSON.stringify(r);
 }).join(`
 `) + `
 `;
-function Pe(e, a, s) {
-  const r = URL.createObjectURL(new Blob([e], { type: s })), l = document.createElement("a");
-  l.href = r, l.download = a, l.click(), setTimeout(() => URL.revokeObjectURL(r), 1e3);
+function qe(e, a, n) {
+  const r = URL.createObjectURL(new Blob([e], { type: n })), i = document.createElement("a");
+  i.href = r, i.download = a, i.click(), setTimeout(() => URL.revokeObjectURL(r), 1e3);
 }
-const ya = /(-?)(?:([a-z_]+):)?("([^"]*)"?|\S+)/g;
-function ie(e) {
+const ma = /(-?)(?:([a-z_]+):)?("([^"]*)"?|\S+)/g;
+function ce(e) {
   const a = [];
-  for (const s of e.matchAll(ya)) {
-    let r = s[3].startsWith('"') ? s[4] ?? "" : s[3], l = s[2] ?? null;
-    l && r.startsWith("//") && (r = `${l}:${r}`, l = null), r && a.push({ field: l, value: r, negated: s[1] === "-", text: s[0] });
+  for (const n of e.matchAll(ma)) {
+    let r = n[3].startsWith('"') ? n[4] ?? "" : n[3], i = n[2] ?? null;
+    i && r.startsWith("//") && (r = `${i}:${r}`, i = null), r && a.push({ field: i, value: r, negated: n[1] === "-", text: n[0] });
   }
   return a;
 }
-const Na = (e, a) => ie(e).filter((s) => s !== a && s.text !== a.text).map((s) => s.text).join(" "), Ie = (e) => /\s/.test(e) ? `"${e.replace(/"/g, "")}"` : e, Lt = [
+const va = (e, a) => ce(e).filter((n) => n !== a && n.text !== a.text).map((n) => n.text).join(" "), Pe = (e) => /\s/.test(e) ? `"${e.replace(/"/g, "")}"` : e, _t = [
   { field: "actor", label: "Who", hint: "a login, account, key or name", kinds: ["events", "requests"] },
   { field: "action", label: "Action", hint: "e.g. trade.closed, or trade.* for all", kinds: ["events"] },
   { field: "result", label: "Result", hint: "success, failed or refused", kinds: ["events"] },
@@ -228,154 +228,154 @@ const Na = (e, a) => ie(e).filter((s) => s !== a && s.text !== a.text).map((s) =
   { field: "route", label: "Route", hint: "e.g. /trading/* ", kinds: ["requests"] },
   { field: "status", label: "Status", hint: "a code or a range, e.g. 4xx", kinds: ["requests"] },
   { field: "request", label: "Request id", hint: "everything one request did", kinds: ["events", "requests"] }
-], Ke = (e) => Lt.filter((a) => a.kinds.includes(e)), ka = { events: ["origin", "outcome", "session"], requests: ["origin", "session"] }, Sa = (e) => [...Ke(e).map((a) => a.field), ...ka[e]], _a = (e) => {
+], He = (e) => _t.filter((a) => a.kinds.includes(e)), pa = { events: ["origin", "outcome", "session"], requests: ["origin", "session"] }, fa = (e) => [...He(e).map((a) => a.field), ...pa[e]], ga = (e) => {
   var a;
-  return ((a = Lt.find((s) => s.field === e)) == null ? void 0 : a.label) ?? ce(A(e));
+  return ((a = _t.find((n) => n.field === e)) == null ? void 0 : a.label) ?? he(P(e));
 };
-function wa(e, a, s, r = {}) {
-  const l = e.startsWith("-"), o = l ? e.slice(1) : e, c = l ? "-" : "", u = o.indexOf(":");
-  if (u < 0)
-    return Ke(a).filter((y) => y.field.startsWith(o.toLowerCase()) || y.label.toLowerCase().startsWith(o.toLowerCase())).map((y) => ({ insert: `${c}${y.field}:`, label: `${y.field}:`, hint: y.hint }));
-  const h = o.slice(0, u), b = o.slice(u + 1).toLowerCase();
+function ba(e, a, n, r = {}) {
+  const i = e.startsWith("-"), c = i ? e.slice(1) : e, o = i ? "-" : "", h = c.indexOf(":");
+  if (h < 0)
+    return He(a).filter((g) => g.field.startsWith(c.toLowerCase()) || g.label.toLowerCase().startsWith(c.toLowerCase())).map((g) => ({ insert: `${o}${g.field}:`, label: `${g.field}:`, hint: g.hint }));
+  const d = c.slice(0, h), N = c.slice(h + 1).toLowerCase();
   return (() => {
-    const y = (v) => (r[v] ?? []).filter((g) => g.value).map((g) => ({ insert: g.value, label: g.value, hint: g.count.toLocaleString() }));
-    switch (h) {
+    const g = (m) => (r[m] ?? []).filter((v) => v.value).map((v) => ({ insert: v.value, label: v.value, hint: v.count.toLocaleString() }));
+    switch (d) {
       case "action":
-        return Object.entries((s == null ? void 0 : s.actions) ?? {}).map(([v, g]) => ({ insert: v, label: v, hint: g.title }));
+        return Object.entries((n == null ? void 0 : n.actions) ?? {}).map(([m, v]) => ({ insert: m, label: m, hint: v.title }));
       case "category":
-        return [...new Set(Object.values((s == null ? void 0 : s.actions) ?? {}).map((v) => v.category))].map((v) => ({ insert: v, label: v }));
+        return [...new Set(Object.values((n == null ? void 0 : n.actions) ?? {}).map((m) => m.category))].map((m) => ({ insert: m, label: m }));
       case "actor_type":
-        return Object.entries((s == null ? void 0 : s.actor_types) ?? {}).map(([v, g]) => ({ insert: v, label: v, hint: g }));
+        return Object.entries((n == null ? void 0 : n.actor_types) ?? {}).map(([m, v]) => ({ insert: m, label: m, hint: v }));
       case "result":
-        return ["success", "failed", "refused"].map((v) => ({ insert: v, label: v }));
+        return ["success", "failed", "refused"].map((m) => ({ insert: m, label: m }));
       case "method":
-        return ["GET", "POST", "PUT", "PATCH", "DELETE"].map((v) => ({ insert: v, label: v }));
+        return ["GET", "POST", "PUT", "PATCH", "DELETE"].map((m) => ({ insert: m, label: m }));
       case "status":
-        return ["2xx", "4xx", "5xx"].map((v) => ({ insert: v, label: v }));
+        return ["2xx", "4xx", "5xx"].map((m) => ({ insert: m, label: m }));
       case "on":
-        return Object.entries((s == null ? void 0 : s.entities) ?? {}).filter(([v]) => !v.includes("_")).map(([v, g]) => ({ insert: `${v}:`, label: `${v}:`, hint: g }));
+        return Object.entries((n == null ? void 0 : n.entities) ?? {}).filter(([m]) => !m.includes("_")).map(([m, v]) => ({ insert: `${m}:`, label: `${m}:`, hint: v }));
       case "app":
-        return y("origin");
+        return g("origin");
       case "service":
-        return y("service");
+        return g("service");
       default:
         return [];
     }
-  })().filter((y) => y.insert.toLowerCase().startsWith(b) || y.insert.toLowerCase().split(/[._:]/).some((v) => v.startsWith(b)) || (y.hint ?? "").toLowerCase().split(/\s+/).some((v) => v.startsWith(b))).slice(0, 12).map((y) => ({ ...y, insert: `${c}${h}:${y.insert.endsWith(":") ? y.insert : Ie(y.insert)}` }));
+  })().filter((g) => g.insert.toLowerCase().startsWith(N) || g.insert.toLowerCase().split(/[._:]/).some((m) => m.startsWith(N)) || (g.hint ?? "").toLowerCase().split(/\s+/).some((m) => m.startsWith(N))).slice(0, 12).map((g) => ({ ...g, insert: `${o}${d}:${g.insert.endsWith(":") ? g.insert : Pe(g.insert)}` }));
 }
-const fe = 6e4, Q = 1440, Ca = [15, 30, 60, 120, 180, 360, 720, 1440, 2880, 10080, 20160, 43200], gt = 7, $a = new Intl.NumberFormat(void 0, { notation: "compact", maximumFractionDigits: 1 });
-function Ta(e) {
-  const a = e.bucket_minutes * fe, s = new Map(e.buckets.map((l) => [W(l.at), l.count])), r = [];
-  for (let l = Math.floor(W(e.occurred_from) / a) * a; l < W(e.occurred_to); l += a)
-    r.push({ at: l, count: s.get(l) ?? 0 });
+const ye = 6e4, ne = 1440, ya = [15, 30, 60, 120, 180, 360, 720, 1440, 2880, 10080, 20160, 43200], vt = 7, Na = new Intl.NumberFormat(void 0, { notation: "compact", maximumFractionDigits: 1 });
+function ka(e) {
+  const a = e.bucket_minutes * ye, n = new Map(e.buckets.map((i) => [I(i.at), i.count])), r = [];
+  for (let i = Math.floor(I(e.occurred_from) / a) * a; i < I(e.occurred_to); i += a)
+    r.push({ at: i, count: n.get(i) ?? 0 });
   return r;
 }
-function Ma(e) {
-  return e % Q === 0 ? e === Q ? "Daily bars" : `${e / Q}-day bars` : e % 60 === 0 ? e === 60 ? "Hourly bars" : `${e / 60}-hour bars` : `${e}-minute bars`;
+function Sa(e) {
+  return e % ne === 0 ? e === ne ? "Daily bars" : `${e / ne}-day bars` : e % 60 === 0 ? e === 60 ? "Hourly bars" : `${e / 60}-hour bars` : `${e}-minute bars`;
 }
-function xe(e, a) {
-  return a >= Q ? ee(e) : `${Y(e)}, ${Re(e)} – ${Re(e + a * fe)}`;
+function Le(e, a) {
+  return a >= ne ? Z(e) : `${te(e)}, ${De(e)} – ${De(e + a * ye)}`;
 }
-function Ea(e, a) {
+function _a(e, a) {
   if (e.length < 2) return [];
-  const s = (e[e.length - 1].at - e[0].at) / fe, r = Ca.find((c) => c >= a && c % a === 0 && s / c <= gt) ?? a * Math.ceil(e.length / gt), l = r >= Q, o = [];
-  return e.forEach((c, u) => {
-    if (c.at % (r * fe) !== 0) return;
-    const h = o[o.length - 1], b = !h || Y(e[h.index].at) !== Y(c.at);
-    o.push({ index: u, top: l ? Y(c.at) : Re(c.at), bottom: !l && b ? Y(c.at) : "" });
-  }), o;
+  const n = (e[e.length - 1].at - e[0].at) / ye, r = ya.find((o) => o >= a && o % a === 0 && n / o <= vt) ?? a * Math.ceil(e.length / vt), i = r >= ne, c = [];
+  return e.forEach((o, h) => {
+    if (o.at % (r * ye) !== 0) return;
+    const d = c[c.length - 1], N = !d || te(e[d.index].at) !== te(o.at);
+    c.push({ index: h, top: i ? te(o.at) : De(o.at), bottom: !i && N ? te(o.at) : "" });
+  }), c;
 }
-function Oa({ chart: e, noun: a, loading: s }) {
-  const r = oe(() => e ? Ta(e) : [], [e]), [l, o] = T(null), c = r.reduce((g, N) => g + N.count, 0), u = r.reduce((g, N) => Math.max(g, N.count), 0), h = r.find((g) => g.count === u && u > 0), b = (e == null ? void 0 : e.bucket_minutes) ?? Q, k = oe(() => Ea(r, b), [r, b]), y = a.replace(/s$/, ""), v = l !== null ? r[l] : void 0;
-  return /* @__PURE__ */ n("div", { className: "ahv-chart", children: [
-    /* @__PURE__ */ n("div", { className: "ahv-chart-head", children: [
-      /* @__PURE__ */ n("span", { children: [
-        /* @__PURE__ */ t("strong", { className: "ahv-num", children: s && !e ? "…" : c.toLocaleString() }),
+function Ca({ chart: e, noun: a, loading: n }) {
+  const r = de(() => e ? ka(e) : [], [e]), [i, c] = $(null), o = r.reduce((v, b) => v + b.count, 0), h = r.reduce((v, b) => Math.max(v, b.count), 0), d = r.find((v) => v.count === h && h > 0), N = (e == null ? void 0 : e.bucket_minutes) ?? ne, y = de(() => _a(r, N), [r, N]), g = a.replace(/s$/, ""), m = i !== null ? r[i] : void 0;
+  return /* @__PURE__ */ s("div", { className: "ahv-chart", children: [
+    /* @__PURE__ */ s("div", { className: "ahv-chart-head", children: [
+      /* @__PURE__ */ s("span", { children: [
+        /* @__PURE__ */ t("strong", { className: "ahv-num", children: n && !e ? "…" : o.toLocaleString() }),
         " ",
-        c === 1 ? y : a,
-        e && /* @__PURE__ */ n("span", { className: "ahv-dim", children: [
+        o === 1 ? g : a,
+        e && /* @__PURE__ */ s("span", { className: "ahv-dim", children: [
           " · ",
-          Y(W(e.occurred_from)),
+          te(I(e.occurred_from)),
           " – ",
-          ee(W(e.occurred_to) - 1),
+          Z(I(e.occurred_to) - 1),
           " UTC"
         ] })
       ] }),
-      e && /* @__PURE__ */ n("span", { className: "ahv-dim", children: [
-        h && /* @__PURE__ */ n(U, { children: [
+      e && /* @__PURE__ */ s("span", { className: "ahv-dim", children: [
+        d && /* @__PURE__ */ s(H, { children: [
           "Peak ",
-          /* @__PURE__ */ t("strong", { className: "ahv-num", children: h.count.toLocaleString() }),
+          /* @__PURE__ */ t("strong", { className: "ahv-num", children: d.count.toLocaleString() }),
           " at ",
-          xe(h.at, b).split(" – ")[0],
+          Le(d.at, N).split(" – ")[0],
           " · "
         ] }),
-        Ma(b)
+        Sa(N)
       ] })
     ] }),
-    /* @__PURE__ */ n(
+    /* @__PURE__ */ s(
       "div",
       {
         className: "ahv-chart-plot",
         role: "img",
-        "aria-label": `${c.toLocaleString()} ${a}${h ? `, most at ${xe(h.at, b)} UTC (${h.count})` : ""}`,
-        onMouseMove: (g) => {
+        "aria-label": `${o.toLocaleString()} ${a}${d ? `, most at ${Le(d.at, N)} UTC (${d.count})` : ""}`,
+        onMouseMove: (v) => {
           if (!r.length) return;
-          const N = g.currentTarget.getBoundingClientRect();
-          o(Math.min(r.length - 1, Math.max(0, Math.floor((g.clientX - N.left) / N.width * r.length))));
+          const b = v.currentTarget.getBoundingClientRect();
+          c(Math.min(r.length - 1, Math.max(0, Math.floor((v.clientX - b.left) / b.width * r.length))));
         },
-        onMouseLeave: () => o(null),
+        onMouseLeave: () => c(null),
         children: [
-          u > 0 && /* @__PURE__ */ t("span", { className: "ahv-chart-max ahv-num", children: $a.format(u) }),
-          /* @__PURE__ */ t("svg", { viewBox: `0 0 ${Math.max(r.length, 1)} 100`, preserveAspectRatio: "none", className: "ahv-chart-svg", children: r.map((g, N) => {
-            const p = u ? Math.max(g.count / u * 100, g.count ? 2 : 0) : 0;
+          h > 0 && /* @__PURE__ */ t("span", { className: "ahv-chart-max ahv-num", children: Na.format(h) }),
+          /* @__PURE__ */ t("svg", { viewBox: `0 0 ${Math.max(r.length, 1)} 100`, preserveAspectRatio: "none", className: "ahv-chart-svg", children: r.map((v, b) => {
+            const p = h ? Math.max(v.count / h * 100, v.count ? 2 : 0) : 0;
             return /* @__PURE__ */ t(
               "rect",
               {
-                x: N + 0.12,
+                x: b + 0.12,
                 width: 0.76,
                 y: 100 - p,
                 height: p,
-                className: N === l ? "ahv-bar ahv-bar-on" : "ahv-bar"
+                className: b === i ? "ahv-bar ahv-bar-on" : "ahv-bar"
               },
-              g.at
+              v.at
             );
           }) }),
-          !s && c === 0 && /* @__PURE__ */ n("span", { className: "ahv-chart-empty", children: [
+          !n && o === 0 && /* @__PURE__ */ s("span", { className: "ahv-chart-empty", children: [
             "No ",
             a,
             " in this period"
           ] }),
-          v && /* @__PURE__ */ n("div", { className: "ahv-tip", style: { left: `${(l + 0.5) / r.length * 100}%` }, children: [
-            /* @__PURE__ */ t("strong", { className: "ahv-num", children: v.count ? `${v.count.toLocaleString()} ${v.count === 1 ? y : a}` : `No ${a}` }),
-            /* @__PURE__ */ n("span", { children: [
-              xe(v.at, b),
+          m && /* @__PURE__ */ s("div", { className: "ahv-tip", style: { left: `${(i + 0.5) / r.length * 100}%` }, children: [
+            /* @__PURE__ */ t("strong", { className: "ahv-num", children: m.count ? `${m.count.toLocaleString()} ${m.count === 1 ? g : a}` : `No ${a}` }),
+            /* @__PURE__ */ s("span", { children: [
+              Le(m.at, N),
               " UTC"
             ] })
           ] })
         ]
       }
     ),
-    /* @__PURE__ */ t("div", { className: "ahv-chart-axis", "aria-hidden": "true", children: k.map((g) => /* @__PURE__ */ n("span", { style: { left: `${(g.index + 0.5) / r.length * 100}%` }, children: [
-      g.top,
-      g.bottom && /* @__PURE__ */ t("b", { children: g.bottom })
-    ] }, g.index)) })
+    /* @__PURE__ */ t("div", { className: "ahv-chart-axis", "aria-hidden": "true", children: y.map((v) => /* @__PURE__ */ s("span", { style: { left: `${(v.index + 0.5) / r.length * 100}%` }, children: [
+      v.top,
+      v.bottom && /* @__PURE__ */ t("b", { children: v.bottom })
+    ] }, v.index)) })
   ] });
 }
-const x = (...e) => e.filter(Boolean).join(" "), qt = (e) => F(e) ? e.actor : ca(e), Ue = (e, a = {}) => F(e) ? e.actor_label : a[e.actor_type] || ce(A(e.actor_type)) || "Unknown", ze = {
+const x = (...e) => e.filter(Boolean).join(" "), Ct = (e) => F(e) ? e.actor : na(e), Ie = (e, a = {}) => F(e) ? e.actor_label : a[e.actor_type] || he(P(e.actor_type)) || "Unknown", Ue = {
   sealed: "Sealed: kept unchanged since its minute ended",
   waiting: "Waiting for its seal: each minute is sealed two minutes after it ends"
 };
-function xa({ value: e, seal: a }) {
-  return /* @__PURE__ */ n("span", { className: "ahv-when", title: `${e} UTC`, children: [
-    /* @__PURE__ */ n("span", { className: "ahv-mono", children: [
-      be(e),
-      a && /* @__PURE__ */ t("span", { className: x("ahv-seal", a === "waiting" && "ahv-seal-waiting"), title: ze[a], "aria-label": ze[a], children: /* @__PURE__ */ t(O, { name: a === "sealed" ? "shield" : "history", size: 11 }) })
+function wa({ value: e, seal: a }) {
+  return /* @__PURE__ */ s("span", { className: "ahv-when", title: `${e} UTC`, children: [
+    /* @__PURE__ */ s("span", { className: "ahv-mono", children: [
+      ue(e),
+      a && /* @__PURE__ */ t("span", { className: x("ahv-seal", a === "waiting" && "ahv-seal-waiting"), title: Ue[a], "aria-label": Ue[a], children: /* @__PURE__ */ t(E, { name: a === "sealed" ? "shield" : "history", size: 11 }) })
     ] }),
-    /* @__PURE__ */ t("span", { className: "ahv-dim", children: Fe(e) })
+    /* @__PURE__ */ t("span", { className: "ahv-dim", children: Be(e) })
   ] });
 }
-const La = (e) => e ? ze[e] : "";
-function qa({ onClick: e, title: a, children: s }) {
+const $a = (e) => e ? Ue[e] : "";
+function Ma({ onClick: e, title: a, children: n }) {
   return e ? /* @__PURE__ */ t(
     "button",
     {
@@ -386,421 +386,442 @@ function qa({ onClick: e, title: a, children: s }) {
         r.stopPropagation(), e();
       },
       onKeyDown: (r) => r.stopPropagation(),
-      children: s
+      children: n
     }
-  ) : /* @__PURE__ */ t(U, { children: s });
+  ) : /* @__PURE__ */ t(H, { children: n });
 }
-function Ra({ row: e, actorTypes: a, onFocus: s }) {
-  const r = qt(e), l = Ue(e, a), o = e.actor_type !== "system" && e.actor_id && e.actor_id !== r ? e.actor_id : "";
-  return /* @__PURE__ */ n("span", { className: "ahv-who", children: [
-    /* @__PURE__ */ t("span", { className: x("ahv-avatar", e.actor_type === "system" && "ahv-avatar-system"), "aria-hidden": "true", children: xt(r) }),
-    /* @__PURE__ */ n("span", { className: "ahv-stack", children: [
-      /* @__PURE__ */ t(qa, { title: `Only activity by ${r}`, onClick: e.actor_id ? s : void 0, children: /* @__PURE__ */ t("span", { className: "ahv-strong ahv-clip", children: r }) }),
-      /* @__PURE__ */ t("span", { className: "ahv-dim ahv-clip", children: [l, o].filter(Boolean).join(" · ") })
+function Ta({ row: e, actorTypes: a, onFocus: n }) {
+  const r = Ct(e), i = Ie(e, a), c = e.actor_type !== "system" && e.actor_id && e.actor_id !== r ? e.actor_id : "";
+  return /* @__PURE__ */ s("span", { className: "ahv-who", children: [
+    /* @__PURE__ */ t("span", { className: x("ahv-avatar", e.actor_type === "system" && "ahv-avatar-system"), "aria-hidden": "true", children: St(r) }),
+    /* @__PURE__ */ s("span", { className: "ahv-stack", children: [
+      /* @__PURE__ */ t(Ma, { title: `Only activity by ${r}`, onClick: e.actor_id ? n : void 0, children: /* @__PURE__ */ t("span", { className: "ahv-strong ahv-clip", children: r }) }),
+      /* @__PURE__ */ t("span", { className: "ahv-dim ahv-clip", children: [i, c].filter(Boolean).join(" · ") })
     ] })
   ] });
 }
-function Aa({ row: e }) {
-  return /* @__PURE__ */ n("span", { className: "ahv-where", children: [
-    e.origin && /* @__PURE__ */ t("span", { className: "ahv-tag", children: A(e.origin) }),
+function Ea({ row: e }) {
+  return /* @__PURE__ */ s("span", { className: "ahv-where", children: [
+    e.origin && /* @__PURE__ */ t("span", { className: "ahv-tag", children: P(e.origin) }),
     e.country && /* @__PURE__ */ t("span", { className: "ahv-dim", title: e.ip || void 0, children: e.country })
   ] });
 }
-function ye({ outcome: e }) {
+function se({ outcome: e }) {
   return e === "success" ? null : /* @__PURE__ */ t("span", { className: x("ahv-tag", e === "failed" ? "ahv-tag-bad" : "ahv-tag-warn"), children: e });
 }
-const Da = (e) => e >= 500 ? "ahv-tag-bad" : e >= 400 ? "ahv-tag-warn" : "ahv-tag-ok", Rt = ({ status: e }) => /* @__PURE__ */ t("span", { className: x("ahv-tag ahv-mono", Da(e)), children: e }), At = ({ method: e }) => /* @__PURE__ */ t("span", { className: x("ahv-tag ahv-mono", `ahv-method-${e.toLowerCase()}`), children: e });
-function Pa({ row: e }) {
-  var s;
-  const a = e.children_count ?? ((s = e.children) == null ? void 0 : s.length) ?? 0;
-  return /* @__PURE__ */ n("span", { className: "ahv-what", children: [
-    e.importance === "high" && e.outcome === "success" && /* @__PURE__ */ t("span", { className: "ahv-mark", title: "Worth attention" }),
-    e.outcome !== "success" && /* @__PURE__ */ t(O, { name: "alert", size: 14, className: e.outcome === "failed" ? "ahv-bad" : "ahv-warn" }),
-    /* @__PURE__ */ t("span", { className: "ahv-sentence", children: e.summary }),
-    a > 0 && /* @__PURE__ */ n("span", { className: "ahv-count", title: `${a} record change${a === 1 ? "" : "s"} made by the same request`, children: [
-      /* @__PURE__ */ t(O, { name: "layers", size: 12 }),
-      a
+const Oa = (e) => e >= 500 ? "ahv-tag-bad" : e >= 400 ? "ahv-tag-warn" : "ahv-tag-ok", wt = ({ status: e }) => /* @__PURE__ */ t("span", { className: x("ahv-tag ahv-mono", Oa(e)), children: e }), $t = ({ method: e }) => /* @__PURE__ */ t("span", { className: x("ahv-tag ahv-mono", `ahv-method-${e.toLowerCase()}`), children: e }), Fe = (e) => e.outcome !== "success" ? { icon: "alert", tone: "rose" } : { icon: e.icon ?? (e.category === "data" ? "layers" : "log"), tone: e.tone ?? "neutral" };
+function La({ row: e }) {
+  var i;
+  const a = e.children_count ?? ((i = e.children) == null ? void 0 : i.length) ?? 0, { icon: n, tone: r } = Fe(e);
+  return /* @__PURE__ */ s("span", { className: "ahv-what ahv-what-event", children: [
+    /* @__PURE__ */ t("span", { className: `ahv-what-icon ahv-tone-${r}`, "aria-hidden": "true", children: /* @__PURE__ */ t(E, { name: n, size: 13 }) }),
+    /* @__PURE__ */ s("span", { className: "ahv-what-text", children: [
+      /* @__PURE__ */ s("span", { className: "ahv-what-title", children: [
+        e.title,
+        /* @__PURE__ */ t(se, { outcome: e.outcome }),
+        e.importance === "high" && e.outcome === "success" && /* @__PURE__ */ t("span", { className: "ahv-mark", title: "Worth attention" })
+      ] }),
+      e.summary !== e.title && /* @__PURE__ */ t("span", { className: "ahv-sentence", children: e.summary })
+    ] }),
+    a > 0 && /* @__PURE__ */ s("span", { className: "ahv-what-changes", title: "Database records changed by the same request; open the row to see them", children: [
+      a,
+      " change",
+      a === 1 ? "" : "s"
     ] })
   ] });
 }
-function Dt({ row: e }) {
-  return /* @__PURE__ */ n("span", { className: "ahv-what", children: [
-    /* @__PURE__ */ t(At, { method: e.method }),
+function Mt({ row: e }) {
+  return /* @__PURE__ */ s("span", { className: "ahv-what", children: [
+    /* @__PURE__ */ t($t, { method: e.method }),
     /* @__PURE__ */ t("span", { className: "ahv-mono ahv-clip", children: e.route }),
-    /* @__PURE__ */ t(Rt, { status: e.status }),
-    /* @__PURE__ */ n("span", { className: "ahv-dim ahv-num", children: [
+    /* @__PURE__ */ t(wt, { status: e.status }),
+    /* @__PURE__ */ s("span", { className: "ahv-dim ahv-num", children: [
       e.duration_ms,
       " ms"
     ] })
   ] });
 }
-function Z({ tone: e = "plain", children: a, action: s }) {
-  return /* @__PURE__ */ n("div", { className: x("ahv-message", e === "bad" && "ahv-message-bad"), role: e === "bad" ? "alert" : void 0, children: [
+function ae({ tone: e = "plain", children: a, action: n }) {
+  return /* @__PURE__ */ s("div", { className: x("ahv-message", e === "bad" && "ahv-message-bad"), role: e === "bad" ? "alert" : void 0, children: [
     /* @__PURE__ */ t("span", { children: a }),
-    s
+    n
   ] });
 }
 function Ve({ rows: e = 6 }) {
-  return /* @__PURE__ */ t("div", { className: "ahv-skeleton", "aria-busy": "true", children: Array.from({ length: e }, (a, s) => /* @__PURE__ */ t("span", {}, s)) });
+  return /* @__PURE__ */ t("div", { className: "ahv-skeleton", "aria-busy": "true", children: Array.from({ length: e }, (a, n) => /* @__PURE__ */ t("span", {}, n)) });
 }
-function Pt({ facts: e }) {
-  return e != null && e.length ? /* @__PURE__ */ t("span", { className: "ahv-chips-row", children: e.map((a, s) => /* @__PURE__ */ n("span", { className: "ahv-fact", children: [
+function Tt({ facts: e }) {
+  return e != null && e.length ? /* @__PURE__ */ t("span", { className: "ahv-chips-row", children: e.map((a, n) => /* @__PURE__ */ s("span", { className: "ahv-fact", children: [
     a.label && /* @__PURE__ */ t("span", { className: "ahv-dim", children: a.label }),
     /* @__PURE__ */ t("span", { className: "ahv-mono", children: a.value })
-  ] }, s)) }) : null;
+  ] }, n)) }) : null;
 }
-const Ia = 36;
-function He({ items: e, mono: a = !1 }) {
-  const s = e.filter(([, r]) => r != null && r !== "");
-  return s.length ? /* @__PURE__ */ t("dl", { className: "ahv-pairs", children: s.map(([r, l], o) => {
-    const c = typeof l == "object" ? JSON.stringify(l) : String(l);
-    return /* @__PURE__ */ n("div", { className: x("ahv-pair-cell", c.length > Ia && "ahv-pair-wide"), children: [
+const xa = 36;
+function Je({ items: e, mono: a = !1 }) {
+  const n = e.filter(([, r]) => r != null && r !== "");
+  return n.length ? /* @__PURE__ */ t("dl", { className: "ahv-pairs", children: n.map(([r, i], c) => {
+    const o = typeof i == "object" ? JSON.stringify(i) : String(i);
+    return /* @__PURE__ */ s("div", { className: x("ahv-pair-cell", o.length > xa && "ahv-pair-wide"), children: [
       /* @__PURE__ */ t("dt", { children: r }),
-      /* @__PURE__ */ t("dd", { className: x(a && "ahv-mono"), children: c })
-    ] }, `${r}-${o}`);
+      /* @__PURE__ */ t("dd", { className: x(a && "ahv-mono"), children: o })
+    ] }, `${r}-${c}`);
   }) }) : null;
 }
-function Je({ changes: e, valueLabel: a = "Value" }) {
+function Ke({ changes: e, valueLabel: a = "Value" }) {
   if (!e.length) return null;
-  const s = e.every((l) => l.before === null), r = e.every((l) => l.after === null);
-  if (s || r) {
-    const l = e.filter((c) => (s ? c.after : c.before) !== null), o = e.length - l.length;
-    return /* @__PURE__ */ n("div", { className: "ahv-stack-gap", children: [
+  const n = e.every((i) => i.before === null), r = e.every((i) => i.after === null);
+  if (n || r) {
+    const i = e.filter((o) => (n ? o.after : o.before) !== null), c = e.length - i.length;
+    return /* @__PURE__ */ s("div", { className: "ahv-stack-gap", children: [
       a !== "Value" && /* @__PURE__ */ t("span", { className: "ahv-eyebrow", children: a }),
-      /* @__PURE__ */ t(He, { items: l.map((c) => [c.label, s ? c.after : c.before]), mono: !0 }),
-      o > 0 && /* @__PURE__ */ n("span", { className: "ahv-dim ahv-small", children: [
-        o,
+      /* @__PURE__ */ t(Je, { items: i.map((o) => [o.label, n ? o.after : o.before]), mono: !0 }),
+      c > 0 && /* @__PURE__ */ s("span", { className: "ahv-dim ahv-small", children: [
+        c,
         " empty field",
-        o === 1 ? "" : "s",
+        c === 1 ? "" : "s",
         " not shown"
       ] })
     ] });
   }
-  return /* @__PURE__ */ t("div", { className: "ahv-scroll-x", children: /* @__PURE__ */ n("table", { className: "ahv-changes", children: [
-    /* @__PURE__ */ t("thead", { children: /* @__PURE__ */ n("tr", { children: [
+  return /* @__PURE__ */ t("div", { className: "ahv-scroll-x", children: /* @__PURE__ */ s("table", { className: "ahv-changes", children: [
+    /* @__PURE__ */ t("thead", { children: /* @__PURE__ */ s("tr", { children: [
       /* @__PURE__ */ t("th", { children: "Field" }),
       /* @__PURE__ */ t("th", { children: "Before" }),
       /* @__PURE__ */ t("th", { children: "After" })
     ] }) }),
-    /* @__PURE__ */ t("tbody", { children: e.map((l) => /* @__PURE__ */ n("tr", { children: [
-      /* @__PURE__ */ t("td", { className: "ahv-field-name", children: l.label }),
-      /* @__PURE__ */ t("td", { className: "ahv-mono ahv-before", children: l.before ?? "—" }),
-      /* @__PURE__ */ t("td", { className: "ahv-mono ahv-after", children: l.after ?? "—" })
-    ] }, l.field)) })
+    /* @__PURE__ */ t("tbody", { children: e.map((i) => /* @__PURE__ */ s("tr", { children: [
+      /* @__PURE__ */ t("td", { className: "ahv-field-name", children: i.label }),
+      /* @__PURE__ */ t("td", { className: "ahv-mono ahv-before", children: i.before ?? "—" }),
+      /* @__PURE__ */ t("td", { className: "ahv-mono ahv-after", children: i.after ?? "—" })
+    ] }, i.field)) })
   ] }) });
 }
-const Ua = 200, za = ea(null);
+const Da = 200, Aa = Jt(null);
 function B({ title: e, children: a }) {
-  return /* @__PURE__ */ n("section", { className: "ahv-section", children: [
+  return /* @__PURE__ */ s("section", { className: "ahv-section", children: [
     /* @__PURE__ */ t("h3", { children: e }),
     a
   ] });
 }
-const X = He;
-function ja({ event: e }) {
+const ee = Je;
+function Ra({ event: e }) {
   const a = e.change_list;
   if (!(a != null && a.length)) return null;
-  const s = a.every((l) => l.before === null), r = a.every((l) => l.after === null);
-  return /* @__PURE__ */ t(B, { title: s ? "Recorded values" : r ? "Values removed" : "Changes", children: /* @__PURE__ */ t(Je, { changes: a }) });
+  const n = a.every((i) => i.before === null), r = a.every((i) => i.after === null);
+  return /* @__PURE__ */ t(B, { title: n ? "Recorded values" : r ? "Values removed" : "Changes", children: /* @__PURE__ */ t(Ke, { changes: a }) });
 }
-function Wa({ text: e }) {
-  const [a, s] = T(!1);
-  return /* @__PURE__ */ n("button", { type: "button", className: "ahv-button ahv-button-quiet", onClick: () => {
+function qa({ text: e }) {
+  const [a, n] = $(!1);
+  return /* @__PURE__ */ s("button", { type: "button", className: "ahv-button ahv-button-quiet", onClick: () => {
     var r;
     (r = navigator.clipboard) == null || r.writeText(e).then(() => {
-      s(!0), setTimeout(() => s(!1), 1500);
+      n(!0), setTimeout(() => n(!1), 1500);
     });
   }, children: [
-    /* @__PURE__ */ t(O, { name: a ? "check" : "copy", size: 14 }),
+    /* @__PURE__ */ t(E, { name: a ? "check" : "copy", size: 14 }),
     a ? "Copied" : "Copy"
   ] });
 }
-function Ba({ row: e }) {
-  const [a, s] = T(!1), { children: r, details: l, ...o } = e, c = JSON.stringify(o, null, 2);
-  return /* @__PURE__ */ n("section", { className: "ahv-section", children: [
-    /* @__PURE__ */ n("div", { className: "ahv-row-between", children: [
-      /* @__PURE__ */ n("button", { type: "button", className: "ahv-disclose", "aria-expanded": a, onClick: () => s((u) => !u), children: [
-        /* @__PURE__ */ t(O, { name: "chevronDown", size: 14, className: x(a && "ahv-turned") }),
+function Pa({ row: e }) {
+  const [a, n] = $(!1), { children: r, details: i, ...c } = e, o = JSON.stringify(c, null, 2);
+  return /* @__PURE__ */ s("section", { className: "ahv-section", children: [
+    /* @__PURE__ */ s("div", { className: "ahv-row-between", children: [
+      /* @__PURE__ */ s("button", { type: "button", className: "ahv-disclose", "aria-expanded": a, onClick: () => n((h) => !h), children: [
+        /* @__PURE__ */ t(E, { name: "chevronDown", size: 14, className: x(a && "ahv-turned") }),
         "Full record (JSON)"
       ] }),
-      /* @__PURE__ */ t(Wa, { text: c })
+      /* @__PURE__ */ t(qa, { text: o })
     ] }),
-    a && /* @__PURE__ */ t("pre", { className: "ahv-pre", children: c })
+    a && /* @__PURE__ */ t("pre", { className: "ahv-pre", children: o })
   ] });
 }
-function Fa({ open: e, events: a, calls: s, onOpen: r }) {
-  const l = [...a, ...s].sort((o, c) => o.occurred_at.localeCompare(c.occurred_at));
-  return l.length ? /* @__PURE__ */ t("ol", { className: "ahv-list", children: l.map((o) => /* @__PURE__ */ t("li", { children: /* @__PURE__ */ n("button", { type: "button", disabled: o.id === e.id, onClick: () => r(o), children: [
-    /* @__PURE__ */ t("span", { className: "ahv-mono ahv-dim", children: be(o.occurred_at) }),
-    F(o) ? /* @__PURE__ */ n("span", { className: "ahv-what", children: [
-      /* @__PURE__ */ t("span", { className: "ahv-sentence", children: o.summary }),
-      /* @__PURE__ */ t(ye, { outcome: o.outcome })
-    ] }) : /* @__PURE__ */ t(Dt, { row: o })
-  ] }) }, o.id)) }) : /* @__PURE__ */ t("p", { className: "ahv-dim", children: "Nothing else was recorded for this request." });
+function Ia({ open: e, events: a, calls: n, onOpen: r }) {
+  const i = [...a, ...n].sort((c, o) => c.occurred_at.localeCompare(o.occurred_at));
+  return i.length ? /* @__PURE__ */ t("ol", { className: "ahv-list", children: i.map((c) => /* @__PURE__ */ t("li", { children: /* @__PURE__ */ s("button", { type: "button", disabled: c.id === e.id, onClick: () => r(c), children: [
+    /* @__PURE__ */ t("span", { className: "ahv-mono ahv-dim", children: ue(c.occurred_at) }),
+    F(c) ? /* @__PURE__ */ s("span", { className: "ahv-what", children: [
+      /* @__PURE__ */ t("span", { className: "ahv-sentence", children: c.summary }),
+      /* @__PURE__ */ t(se, { outcome: c.outcome })
+    ] }) : /* @__PURE__ */ t(Mt, { row: c })
+  ] }) }, c.id)) }) : /* @__PURE__ */ t("p", { className: "ahv-dim", children: "Nothing else was recorded for this request." });
 }
-function Ka(e, a) {
-  const s = F(a);
-  return I(`${a.id}`, async () => {
-    if (s) return e(`events/${a.id}`, { method: "GET" });
+function Ua(e, a) {
+  const n = F(a);
+  return j(`${a.id}`, async () => {
+    if (n) return e(`events/${a.id}`, { method: "GET" });
     if (!a.request_id) return { same_request: [], requests: [] };
-    const r = (c) => e("search", {
+    const r = (o) => e("search", {
       method: "POST",
-      body: { kind: c, filters: { request_id: a.request_id }, limit: Ua }
-    }), [l, o] = await Promise.all([r("events"), r("requests")]);
-    return { same_request: l.items, requests: o.items.filter((c) => c.id !== a.id) };
+      body: { kind: o, filters: { request_id: a.request_id }, limit: Da }
+    }), [i, c] = await Promise.all([r("events"), r("requests")]);
+    return { same_request: i.items, requests: c.items.filter((o) => o.id !== a.id) };
   });
 }
-function It({ request: e, row: a, onClose: s, onFocus: r, actorTypes: l, entities: o, seal: c }) {
-  const [u, h] = T(a);
-  K(() => h(a), [a]);
-  const b = D(null), k = D(null), y = D(s);
-  y.current = s;
-  const v = u !== null;
-  K(() => {
-    var S, d;
-    if (!v) return;
-    const N = ((S = b.current) == null ? void 0 : S.getRootNode()) ?? document, p = N.activeElement ?? document.activeElement;
-    (d = b.current) == null || d.focus();
+function Et({ request: e, row: a, onClose: n, onFocus: r, actorTypes: i, entities: c, seal: o }) {
+  const [h, d] = $(a);
+  V(() => d(a), [a]);
+  const N = R(null), y = R(null), g = R(n);
+  g.current = n;
+  const m = h !== null;
+  V(() => {
+    var k, D;
+    if (!m) return;
+    const b = ((k = N.current) == null ? void 0 : k.getRootNode()) ?? document, p = b.activeElement ?? document.activeElement;
+    (D = N.current) == null || D.focus();
     const M = (f) => {
       if (f.key === "Escape")
-        f.stopPropagation(), y.current();
-      else if (f.key === "Tab" && k.current) {
-        const _ = [...k.current.querySelectorAll("button:not(:disabled), [href], input, select, [tabindex]:not([tabindex='-1'])")], q = N.activeElement;
-        if (!_.length) return;
-        f.shiftKey && q === _[0] ? (f.preventDefault(), _[_.length - 1].focus()) : !f.shiftKey && q === _[_.length - 1] ? (f.preventDefault(), _[0].focus()) : k.current.contains(q) || (f.preventDefault(), _[0].focus());
+        f.stopPropagation(), g.current();
+      else if (f.key === "Tab" && y.current) {
+        const C = [...y.current.querySelectorAll("button:not(:disabled), [href], input, select, [tabindex]:not([tabindex='-1'])")], L = b.activeElement;
+        if (!C.length) return;
+        f.shiftKey && L === C[0] ? (f.preventDefault(), C[C.length - 1].focus()) : !f.shiftKey && L === C[C.length - 1] ? (f.preventDefault(), C[0].focus()) : y.current.contains(L) || (f.preventDefault(), C[0].focus());
       }
     };
     return window.addEventListener("keydown", M, !0), () => {
       var f;
       window.removeEventListener("keydown", M, !0), (f = p == null ? void 0 : p.focus) == null || f.call(p);
     };
-  }, [v]);
-  const g = Qt(za);
-  return u ? na(
-    /* @__PURE__ */ n("div", { className: "ahv ahv-drawer-layer", children: [
-      /* @__PURE__ */ t("div", { className: "ahv-backdrop", onClick: s }),
-      /* @__PURE__ */ n("aside", { ref: k, className: "ahv-drawer", role: "dialog", "aria-modal": "true", "aria-label": "Activity details", children: [
-        /* @__PURE__ */ t("button", { ref: b, type: "button", className: "ahv-icon-button ahv-drawer-close", onClick: s, "aria-label": "Close", children: /* @__PURE__ */ t(O, { name: "close" }) }),
+  }, [m]);
+  const v = Vt(Aa);
+  return h ? Yt(
+    /* @__PURE__ */ s("div", { className: "ahv ahv-drawer-layer", children: [
+      /* @__PURE__ */ t("div", { className: "ahv-backdrop", onClick: n }),
+      /* @__PURE__ */ s("aside", { ref: y, className: "ahv-drawer", role: "dialog", "aria-modal": "true", "aria-label": "Activity details", children: [
+        /* @__PURE__ */ t("button", { ref: N, type: "button", className: "ahv-icon-button ahv-drawer-close", onClick: n, "aria-label": "Close", children: /* @__PURE__ */ t(E, { name: "close" }) }),
         /* @__PURE__ */ t(
-          Va,
+          za,
           {
             request: e,
-            row: u,
-            onOpen: h,
+            row: h,
+            onOpen: d,
             onFocus: r,
-            actorTypes: l,
-            entities: o,
-            seal: u === a ? c : null
+            actorTypes: i,
+            entities: c,
+            seal: h === a ? o : null
           },
-          u.id
+          h.id
         )
       ] })
     ] }),
-    g ?? document.body
+    v ?? document.body
   ) : null;
 }
-function Va({ request: e, row: a, onOpen: s, onFocus: r, actorTypes: l, entities: o = {}, seal: c }) {
-  var v, g, N, p;
-  const u = Ka(e, a), h = F(a) ? ((v = u.data) == null ? void 0 : v.event) ?? a : null, b = qt(a), k = h != null && h.target_type ? `${o[h.target_type] ?? A(h.target_type)} ${h.target_name || h.target_id}` : "", y = `${ee(W(a.occurred_at))}, ${be(a.occurred_at)} UTC`;
-  return /* @__PURE__ */ n("div", { className: "ahv-drawer-body", children: [
-    /* @__PURE__ */ n("header", { className: "ahv-drawer-head", children: [
-      h ? /* @__PURE__ */ n(U, { children: [
-        /* @__PURE__ */ n("div", { className: "ahv-tags", children: [
-          /* @__PURE__ */ t("span", { className: "ahv-tag", children: h.title }),
-          /* @__PURE__ */ t(ye, { outcome: h.outcome }),
-          h.importance === "high" && /* @__PURE__ */ t("span", { className: "ahv-tag ahv-tag-accent", children: "Worth attention" }),
-          h.imported && /* @__PURE__ */ t("span", { className: "ahv-tag", children: "Imported" })
+function za({ request: e, row: a, onOpen: n, onFocus: r, actorTypes: i, entities: c = {}, seal: o }) {
+  var m, v, b, p;
+  const h = Ua(e, a), d = F(a) ? ((m = h.data) == null ? void 0 : m.event) ?? a : null, N = Ct(a), y = d != null && d.target_type ? `${c[d.target_type] ?? P(d.target_type)} ${d.target_name || d.target_id}` : "", g = `${Z(I(a.occurred_at))}, ${ue(a.occurred_at)} UTC`;
+  return /* @__PURE__ */ s("div", { className: "ahv-drawer-body", children: [
+    /* @__PURE__ */ s("header", { className: "ahv-drawer-head", children: [
+      d ? /* @__PURE__ */ s(H, { children: [
+        /* @__PURE__ */ s("div", { className: "ahv-tags", children: [
+          /* @__PURE__ */ t("span", { className: "ahv-tag", children: d.title }),
+          /* @__PURE__ */ t(se, { outcome: d.outcome }),
+          d.importance === "high" && /* @__PURE__ */ t("span", { className: "ahv-tag ahv-tag-accent", children: "Worth attention" }),
+          d.imported && /* @__PURE__ */ t("span", { className: "ahv-tag", children: "Imported" })
         ] }),
-        /* @__PURE__ */ t("h2", { children: h.summary }),
-        /* @__PURE__ */ t(Pt, { facts: h.facts })
-      ] }) : /* @__PURE__ */ n(U, { children: [
-        /* @__PURE__ */ n("div", { className: "ahv-tags", children: [
-          /* @__PURE__ */ t(At, { method: a.method }),
-          /* @__PURE__ */ t(Rt, { status: a.status })
+        /* @__PURE__ */ t("h2", { children: d.summary }),
+        /* @__PURE__ */ t(Tt, { facts: d.facts })
+      ] }) : /* @__PURE__ */ s(H, { children: [
+        /* @__PURE__ */ s("div", { className: "ahv-tags", children: [
+          /* @__PURE__ */ t($t, { method: a.method }),
+          /* @__PURE__ */ t(wt, { status: a.status })
         ] }),
         /* @__PURE__ */ t("h2", { className: "ahv-mono", children: a.route })
       ] }),
-      /* @__PURE__ */ n("p", { className: "ahv-dim", children: [
-        b,
+      /* @__PURE__ */ s("p", { className: "ahv-dim", children: [
+        N,
         " · ",
-        Ue(a, l),
+        Ie(a, i),
         " · ",
-        y
+        g
       ] }),
-      r && /* @__PURE__ */ n("div", { className: "ahv-actions", children: [
-        a.actor_id && /* @__PURE__ */ n("button", { type: "button", className: "ahv-button", onClick: () => r({ actor_id: a.actor_id }), children: [
-          /* @__PURE__ */ t(O, { name: "user", size: 14 }),
+      r && /* @__PURE__ */ s("div", { className: "ahv-actions", children: [
+        a.actor_id && /* @__PURE__ */ s("button", { type: "button", className: "ahv-button", onClick: () => r({ actor_id: a.actor_id }), children: [
+          /* @__PURE__ */ t(E, { name: "user", size: 14 }),
           "All by ",
-          b
+          N
         ] }),
-        (h == null ? void 0 : h.target_type) && /* @__PURE__ */ n(
+        (d == null ? void 0 : d.target_type) && /* @__PURE__ */ s(
           "button",
           {
             type: "button",
             className: "ahv-button",
-            onClick: () => r({ target_type: h.target_type, target_id: h.target_id }),
+            onClick: () => r({ target_type: d.target_type, target_id: d.target_id }),
             children: [
-              /* @__PURE__ */ t(O, { name: "history", size: 14 }),
+              /* @__PURE__ */ t(E, { name: "history", size: 14 }),
               "Timeline of ",
-              k
+              y
             ]
           }
         )
       ] })
     ] }),
-    h ? /* @__PURE__ */ n(U, { children: [
-      h.outcome !== "success" && h.reason && /* @__PURE__ */ t(B, { title: "Reason", children: /* @__PURE__ */ t("p", { children: h.reason }) }),
-      /* @__PURE__ */ t(ja, { event: h }),
-      (g = h.details) != null && g.length ? /* @__PURE__ */ t(B, { title: "Details", children: /* @__PURE__ */ t(X, { items: h.details.map((M) => [M.label, M.value]) }) }) : h.metadata && !u.loading ? /* @__PURE__ */ t(B, { title: "Details", children: /* @__PURE__ */ t(X, { items: Object.entries(h.metadata).map(([M, S]) => [ce(A(M)), S]) }) }) : null,
-      (k || h.related.length > 0) && /* @__PURE__ */ t(B, { title: "Concerns", children: /* @__PURE__ */ t(X, { items: [
-        ["Target", k],
-        ...h.related.map(([M, S]) => [ce(o[M] ?? A(M)), S])
+    d ? /* @__PURE__ */ s(H, { children: [
+      d.outcome !== "success" && d.reason && /* @__PURE__ */ t(B, { title: "Reason", children: /* @__PURE__ */ t("p", { children: d.reason }) }),
+      /* @__PURE__ */ t(Ra, { event: d }),
+      (v = d.details) != null && v.length ? /* @__PURE__ */ t(B, { title: "Details", children: /* @__PURE__ */ t(ee, { items: d.details.map((M) => [M.label, M.value]) }) }) : d.metadata && !h.loading ? /* @__PURE__ */ t(B, { title: "Details", children: /* @__PURE__ */ t(ee, { items: Object.entries(d.metadata).map(([M, k]) => [he(P(M)), k]) }) }) : null,
+      (y || d.related.length > 0) && /* @__PURE__ */ t(B, { title: "Concerns", children: /* @__PURE__ */ t(ee, { items: [
+        ["Target", y],
+        ...d.related.map(([M, k]) => [he(c[M] ?? P(M)), k])
       ] }) })
-    ] }) : /* @__PURE__ */ n(U, { children: [
-      /* @__PURE__ */ t(B, { title: "Request", children: /* @__PURE__ */ t(X, { items: [["Path", a.path], ["Took", `${a.duration_ms} ms`], ["Service", A(a.service)]] }) }),
+    ] }) : /* @__PURE__ */ s(H, { children: [
+      /* @__PURE__ */ t(B, { title: "Request", children: /* @__PURE__ */ t(ee, { items: [["Path", a.path], ["Took", `${a.duration_ms} ms`], ["Service", P(a.service)]] }) }),
       a.request_body && /* @__PURE__ */ t(B, { title: "Sent (secrets masked)", children: /* @__PURE__ */ t("pre", { className: "ahv-pre", children: JSON.stringify(a.request_body, null, 2) }) })
     ] }),
-    a.request_id && /* @__PURE__ */ t(B, { title: "Same request", children: u.error ? /* @__PURE__ */ n(Z, { tone: "bad", action: /* @__PURE__ */ t("button", { type: "button", className: "ahv-button", onClick: u.refresh, children: "Retry" }), children: [
+    a.request_id && /* @__PURE__ */ t(B, { title: "Same request", children: h.error ? /* @__PURE__ */ s(ae, { tone: "bad", action: /* @__PURE__ */ t("button", { type: "button", className: "ahv-button", onClick: h.refresh, children: "Retry" }), children: [
       "Couldn't load: ",
-      u.error.message
-    ] }) : u.loading && !u.data ? /* @__PURE__ */ t(Ve, { rows: 2 }) : /* @__PURE__ */ t(Fa, { open: a, events: ((N = u.data) == null ? void 0 : N.same_request) ?? [], calls: ((p = u.data) == null ? void 0 : p.requests) ?? [], onOpen: s }) }),
-    /* @__PURE__ */ t(B, { title: "Who and from where", children: /* @__PURE__ */ t(X, { items: [
-      ["Who", `${b} (${Ue(a, l)}${a.actor_id && a.actor_id !== b ? ` ${a.actor_id}` : ""})`],
-      ["App", a.origin && A(a.origin)],
+      h.error.message
+    ] }) : h.loading && !h.data ? /* @__PURE__ */ t(Ve, { rows: 2 }) : /* @__PURE__ */ t(Ia, { open: a, events: ((b = h.data) == null ? void 0 : b.same_request) ?? [], calls: ((p = h.data) == null ? void 0 : p.requests) ?? [], onOpen: n }) }),
+    /* @__PURE__ */ t(B, { title: "Who and from where", children: /* @__PURE__ */ t(ee, { items: [
+      ["Who", `${N} (${Ie(a, i)}${a.actor_id && a.actor_id !== N ? ` ${a.actor_id}` : ""})`],
+      ["App", a.origin && P(a.origin)],
       ["Country", a.country],
       ["IP address", a.ip],
-      ["Device", h ? h.device : a.user_agent],
+      ["Device", d ? d.device : a.user_agent],
       ["Session", a.session_id],
       ["Company", a.tenant_id],
-      ["Service", A(a.service)]
+      ["Service", P(a.service)]
     ] }) }),
-    /* @__PURE__ */ t(B, { title: "Reference", children: /* @__PURE__ */ t(X, { items: [
+    /* @__PURE__ */ t(B, { title: "Reference", children: /* @__PURE__ */ t(ee, { items: [
       ["Record id", a.id],
       ["Request id", a.request_id],
       ["Recorded", `${a.received_at} UTC`],
-      ["Integrity", La(c ?? null)],
-      ...h ? [["Action", h.action]] : []
+      ["Integrity", $a(o ?? null)],
+      ...d ? [["Action", d.action]] : []
     ] }) }),
-    /* @__PURE__ */ t(Ba, { row: h ?? a })
+    /* @__PURE__ */ t(Pa, { row: d ?? a })
   ] });
 }
-const bt = 65, je = { events: "Events", access_logs: "Requests" }, Ha = 20, yt = (e, a = Date.now()) => (a - Date.parse(`${e.replace(" ", "T")}:00Z`)) / 6e4, Ja = () => new Date(Date.now() - 864e5).toISOString().slice(0, 10);
-function Ga(e, a, s) {
-  var l;
-  const r = (l = s == null ? void 0 : s.sealed_until) == null ? void 0 : l[a];
+const ja = 65, ze = { events: "Events", access_logs: "Requests" }, Wa = 20, Ba = (e, a = Date.now()) => (a - Date.parse(`${e.replace(" ", "T")}:00Z`)) / 6e4, Ha = () => new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+function Fa(e, a, n) {
+  var i;
+  const r = (i = n == null ? void 0 : n.sealed_until) == null ? void 0 : i[a];
   return r ? e.slice(0, 16) <= r ? "sealed" : "waiting" : null;
 }
-function Xa({ request: e, status: a }) {
-  var _, q;
-  const [s, r] = T(!1), [l, o] = T(Ja), [c, u] = T(!1), [h, b] = T(null), k = D(null), y = I(
+function Va({ request: e, status: a }) {
+  var C, L;
+  const [n, r] = $(!1), [i, c] = $(Ha), [o, h] = $(!1), [d, N] = $(null), y = R(null), g = j(
     a != null && a.checks ? "integrity" : null,
     () => e("integrity", { method: "GET" })
-  ), v = !!(a != null && a.checks && ((_ = y.data) != null && _.allowed));
+  ), m = !!(a != null && a.checks && ((C = g.data) != null && C.allowed));
   if (!a) return null;
-  const g = Object.entries(a.sealed_until ?? {}), N = a.last_daily, p = (q = a.stats) == null ? void 0 : q.queued;
-  if (!g.length && a.recording === void 0 && !N) return null;
-  const M = async (E) => {
-    u(!0);
+  const v = Object.entries(a.sealed_until ?? {}), b = a.last_daily, p = (L = a.stats) == null ? void 0 : L.queued;
+  if (!v.length && a.recording === void 0 && !b) return null;
+  const M = async (T) => {
+    h(!0);
     try {
-      b(await E());
-    } catch (m) {
-      b({ kind: "error", message: m.message });
+      N(await T());
+    } catch (u) {
+      N({ kind: "error", message: u.message });
     } finally {
-      u(!1);
+      h(!1);
     }
-  }, S = () => M(async () => ({ kind: "day", ...await e("integrity/verify", { method: "POST", body: { day: l } }) })), d = () => M(async () => {
-    const E = await e(`integrity/seal/${l}`, { method: "GET" });
-    return Pe(`${JSON.stringify(E, null, 2)}
-`, `activity-seal-${l}.json`, "application/json"), { kind: "downloaded", day: l };
-  }), f = (E) => M(async () => {
-    let m;
+  }, k = () => M(async () => ({ kind: "day", ...await e("integrity/verify", { method: "POST", body: { day: i } }) })), D = () => M(async () => {
+    const T = await e(`integrity/seal/${i}`, { method: "GET" });
+    return qe(`${JSON.stringify(T, null, 2)}
+`, `activity-seal-${i}.json`, "application/json"), { kind: "downloaded", day: i };
+  }), f = (T) => M(async () => {
+    let u;
     try {
-      m = JSON.parse(await E.text());
+      u = JSON.parse(await T.text());
     } catch {
-      m = {};
+      u = {};
     }
-    if (!m || !Array.isArray(m.seals) || !m.seals.length)
-      throw new Error(`${E.name} is not a seal record: choose a proof downloaded here (activity-seal-<day>.json)`);
-    const C = await e("integrity/check", { method: "POST", body: { record: m } });
-    return { kind: "proof", name: E.name, day: String(m.day ?? ""), ...C };
+    if (!u || !Array.isArray(u.seals) || !u.seals.length)
+      throw new Error(`${T.name} is not a seal record: choose a proof downloaded here (activity-seal-<day>.json)`);
+    const S = await e("integrity/check", { method: "POST", body: { record: u } });
+    return { kind: "proof", name: T.name, day: String(u.day ?? ""), ...S };
   });
-  return /* @__PURE__ */ n("div", { className: "ahv-status-wrap", children: [
-    /* @__PURE__ */ n("div", { className: "ahv-status", role: "status", children: [
-      /* @__PURE__ */ t(O, { name: "shield", size: 14 }),
-      a.recording !== void 0 && /* @__PURE__ */ t("span", { className: x("ahv-tag", a.recording ? "ahv-tag-ok" : "ahv-tag-bad"), children: a.recording ? "Recording" : "Not recording" }),
-      p !== void 0 && /* @__PURE__ */ n("span", { children: [
-        "Waiting to be written ",
-        /* @__PURE__ */ t("strong", { className: "ahv-num", children: p.toLocaleString() })
+  return /* @__PURE__ */ s("div", { className: "ahv-status-wrap", children: [
+    /* @__PURE__ */ s("div", { className: "ahv-status", role: "status", children: [
+      (() => {
+        const T = v.map(([, W]) => W).sort()[0], u = v.some(([, W]) => Ba(W) > ja), S = [
+          ...v.map(([W, X]) => `${ze[W] ?? W} sealed through ${X} UTC`),
+          p !== void 0 && `${p.toLocaleString()} waiting to be written`,
+          b && `Check of ${b.day}: ${b.ok === !1 ? `${b.problems ?? ""} problem(s)`.trim() : b.ok ? "intact" : "not checked"}`
+        ].filter(Boolean).join(`
+`), q = T != null && T.startsWith((/* @__PURE__ */ new Date()).toISOString().slice(0, 10)) ? T.slice(11, 16) : T;
+        return T && /* @__PURE__ */ s("span", { className: x("ahv-seal-chip", u ? "ahv-warn" : "ahv-ok"), title: S, children: [
+          /* @__PURE__ */ t(E, { name: u ? "alert" : "shield", size: 14 }),
+          u ? "Sealing is behind, last sealed" : "Sealed up to",
+          " ",
+          /* @__PURE__ */ t("strong", { className: "ahv-num", children: q }),
+          " UTC"
+        ] });
+      })(),
+      a.recording === !1 && /* @__PURE__ */ t("span", { className: "ahv-tag ahv-tag-bad", children: "Not recording" }),
+      !!p && /* @__PURE__ */ s("span", { className: "ahv-dim", children: [
+        p.toLocaleString(),
+        " waiting to be written"
       ] }),
-      g.map(([E, m]) => /* @__PURE__ */ n(
-        "span",
-        {
-          className: x(yt(m) > bt && "ahv-warn"),
-          title: yt(m) > bt ? "Sealing is behind" : "Every minute up to this one is sealed",
-          children: [
-            je[E] ?? E,
-            " sealed through ",
-            /* @__PURE__ */ t("strong", { className: "ahv-num", children: m })
-          ]
-        },
-        E
-      )),
-      N && /* @__PURE__ */ n("span", { children: [
+      (b == null ? void 0 : b.ok) === !1 && /* @__PURE__ */ s("span", { className: "ahv-tag ahv-tag-bad", children: [
         "Check of ",
-        N.day,
-        ":",
-        " ",
-        /* @__PURE__ */ t("strong", { className: N.ok === !1 ? "ahv-bad" : N.ok ? "ahv-ok" : "ahv-warn", children: N.ok === !1 ? `${N.problems ?? ""} problem(s)`.trim() : N.ok ? "intact" : "not checked" })
+        b.day,
+        ": ",
+        b.problems ?? "",
+        " problem(s)"
       ] }),
-      v && /* @__PURE__ */ t("button", { type: "button", className: "ahv-link-button ahv-push-right", "aria-expanded": s, onClick: () => r((E) => !E), children: "Check integrity" })
+      m && /* @__PURE__ */ s(
+        "button",
+        {
+          type: "button",
+          className: "ahv-button ahv-button-small ahv-push-right",
+          "aria-expanded": n,
+          onClick: () => r((T) => !T),
+          title: "Prove that no record was changed or removed since it was sealed",
+          children: [
+            /* @__PURE__ */ t(E, { name: "check", size: 13 }),
+            "Verify"
+          ]
+        }
+      )
     ] }),
-    s && v && /* @__PURE__ */ n("div", { className: "ahv-checks", children: [
-      /* @__PURE__ */ n("div", { className: "ahv-bar", children: [
-        /* @__PURE__ */ n("label", { className: "ahv-field", children: [
+    n && m && /* @__PURE__ */ s("div", { className: "ahv-checks", children: [
+      /* @__PURE__ */ s("div", { className: "ahv-bar", children: [
+        /* @__PURE__ */ s("label", { className: "ahv-field", children: [
           /* @__PURE__ */ t("span", { children: "Day (UTC)" }),
           /* @__PURE__ */ t(
             "input",
             {
               type: "date",
               className: "ahv-input",
-              value: l,
+              value: i,
               max: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10),
               min: "2000-01-01",
-              onChange: (E) => o(E.target.value)
+              onChange: (T) => c(T.target.value)
             }
           )
         ] }),
-        /* @__PURE__ */ n("button", { type: "button", className: "ahv-button ahv-button-main", disabled: c || !l, onClick: S, children: [
-          /* @__PURE__ */ t(O, { name: "shield", size: 14 }),
-          c ? "Checking…" : "Check this day"
+        /* @__PURE__ */ s("button", { type: "button", className: "ahv-button ahv-button-main", disabled: o || !i, onClick: k, children: [
+          /* @__PURE__ */ t(E, { name: "shield", size: 14 }),
+          o ? "Checking…" : "Check this day"
         ] }),
-        /* @__PURE__ */ n(
+        /* @__PURE__ */ s(
           "button",
           {
             type: "button",
             className: "ahv-button",
-            disabled: c || !l,
-            onClick: d,
+            disabled: o || !i,
+            onClick: D,
             title: "The day's last seal of each table, to keep outside the database",
             children: [
-              /* @__PURE__ */ t(O, { name: "download", size: 14 }),
+              /* @__PURE__ */ t(E, { name: "download", size: 14 }),
               "Download proof"
             ]
           }
         ),
-        /* @__PURE__ */ n(
+        /* @__PURE__ */ s(
           "button",
           {
             type: "button",
             className: "ahv-button",
-            disabled: c,
+            disabled: o,
             title: "Compare a proof kept earlier with the database",
             onClick: () => {
-              var E;
-              return (E = k.current) == null ? void 0 : E.click();
+              var T;
+              return (T = y.current) == null ? void 0 : T.click();
             },
             children: [
-              /* @__PURE__ */ t(O, { name: "check", size: 14 }),
+              /* @__PURE__ */ t(E, { name: "check", size: 14 }),
               "Check a kept proof"
             ]
           }
@@ -808,203 +829,206 @@ function Xa({ request: e, status: a }) {
         /* @__PURE__ */ t(
           "input",
           {
-            ref: k,
+            ref: y,
             type: "file",
             accept: "application/json,.json",
             className: "ahv-hidden",
             tabIndex: -1,
             "aria-hidden": "true",
-            onChange: (E) => {
-              var C;
-              const m = (C = E.target.files) == null ? void 0 : C[0];
-              E.target.value = "", m && f(m);
+            onChange: (T) => {
+              var S;
+              const u = (S = T.target.files) == null ? void 0 : S[0];
+              T.target.value = "", u && f(u);
             }
           }
         )
       ] }),
-      h && /* @__PURE__ */ t(Ya, { verdict: h })
+      d && /* @__PURE__ */ t(Ja, { verdict: d })
     ] })
   ] });
 }
-function Ya({ verdict: e }) {
-  return e.kind === "error" ? /* @__PURE__ */ t("p", { className: "ahv-bad", role: "alert", children: e.message }) : e.kind === "day" ? /* @__PURE__ */ n("div", { role: "status", className: x("ahv-verdict", e.ok ? "ahv-verdict-ok" : "ahv-verdict-bad"), children: [
+function Ja({ verdict: e }) {
+  return e.kind === "error" ? /* @__PURE__ */ t("p", { className: "ahv-bad", role: "alert", children: e.message }) : e.kind === "day" ? /* @__PURE__ */ s("div", { role: "status", className: x("ahv-verdict", e.ok ? "ahv-verdict-ok" : "ahv-verdict-bad"), children: [
     /* @__PURE__ */ t("strong", { children: e.ok ? `${e.day}: intact. ${e.rows.toLocaleString()} records in ${e.checked.toLocaleString()} sealed minutes match their seals.` : `${e.day}: ${(e.problems.length + e.more).toLocaleString()} problem(s) found.` }),
-    !e.ok && /* @__PURE__ */ n("ul", { children: [
-      e.problems.slice(0, Ha).map((a, s) => /* @__PURE__ */ n("li", { children: [
+    !e.ok && /* @__PURE__ */ s("ul", { children: [
+      e.problems.slice(0, Wa).map((a, n) => /* @__PURE__ */ s("li", { children: [
         /* @__PURE__ */ t("span", { className: "ahv-mono", children: a.window_start }),
         " ",
-        je[a.table] ?? a.table,
+        ze[a.table] ?? a.table,
         ": ",
         a.problem
-      ] }, s)),
-      e.more > 0 && /* @__PURE__ */ n("li", { className: "ahv-dim", children: [
+      ] }, n)),
+      e.more > 0 && /* @__PURE__ */ s("li", { className: "ahv-dim", children: [
         "and ",
         e.more.toLocaleString(),
         " more"
       ] })
     ] })
-  ] }) : e.kind === "downloaded" ? /* @__PURE__ */ t("div", { role: "status", className: "ahv-verdict ahv-verdict-ok", children: /* @__PURE__ */ n("strong", { children: [
+  ] }) : e.kind === "downloaded" ? /* @__PURE__ */ t("div", { role: "status", className: "ahv-verdict ahv-verdict-ok", children: /* @__PURE__ */ s("strong", { children: [
     "Proof of ",
     e.day,
     " downloaded. Keep it outside this system: checking it later shows any rewrite since."
-  ] }) }) : e.mismatches.length ? /* @__PURE__ */ n("div", { role: "status", className: "ahv-verdict ahv-verdict-bad", children: [
-    /* @__PURE__ */ n("strong", { children: [
+  ] }) }) : e.mismatches.length ? /* @__PURE__ */ s("div", { role: "status", className: "ahv-verdict ahv-verdict-bad", children: [
+    /* @__PURE__ */ s("strong", { children: [
       e.name,
       ": the database no longer matches this proof of ",
       e.day,
       "."
     ] }),
-    /* @__PURE__ */ t("ul", { children: e.mismatches.map((a, s) => /* @__PURE__ */ n("li", { children: [
+    /* @__PURE__ */ t("ul", { children: e.mismatches.map((a, n) => /* @__PURE__ */ s("li", { children: [
       /* @__PURE__ */ t("span", { className: "ahv-mono", children: a.window_start }),
       " ",
-      je[a.table] ?? a.table,
+      ze[a.table] ?? a.table,
       ": ",
       a.problem
-    ] }, s)) })
-  ] }) : /* @__PURE__ */ t("div", { role: "status", className: "ahv-verdict ahv-verdict-ok", children: /* @__PURE__ */ n("strong", { children: [
+    ] }, n)) })
+  ] }) : /* @__PURE__ */ t("div", { role: "status", className: "ahv-verdict ahv-verdict-ok", children: /* @__PURE__ */ s("strong", { children: [
     e.name,
     ": the database still matches this proof of ",
     e.day,
     "."
   ] }) });
 }
-function Nt(e, a) {
-  const s = e.lastIndexOf(" ", a - 1) + 1, r = e.indexOf(" ", a);
-  return { start: s, end: r < 0 ? e.length : r, word: e.slice(s, r < 0 ? e.length : r) };
+function pt(e, a) {
+  const n = e.lastIndexOf(" ", a - 1) + 1, r = e.indexOf(" ", a);
+  return { start: n, end: r < 0 ? e.length : r, word: e.slice(n, r < 0 ? e.length : r) };
 }
-function Za({ value: e, onChange: a, onSubmit: s, suggestions: r, placeholder: l, inputRef: o }) {
-  const c = D(null), u = o ?? c, h = ta(), [b, k] = T(0), [y, v] = T(!1), [g, N] = T(0), [p, M] = T(!1), { start: S, end: d, word: f } = Nt(e, b), _ = y ? r(f) : [], q = _[Math.min(g, _.length - 1)], E = (m) => {
-    const C = e.slice(d), P = m.insert.endsWith(":") ? "" : " ", Ne = `${e.slice(0, S)}${m.insert}${C.startsWith(" ") || !P ? "" : P}${C}`, te = S + m.insert.length + (m.insert.endsWith(":") ? 0 : 1);
-    a(Ne), N(0), M(!1), requestAnimationFrame(() => {
-      var z, de;
-      (z = u.current) == null || z.focus(), (de = u.current) == null || de.setSelectionRange(te, te), k(te);
+function Ka({ value: e, onChange: a, onSubmit: n, suggestions: r, placeholder: i, inputRef: c }) {
+  const o = R(null), h = c ?? o, d = Kt(), [N, y] = $(0), [g, m] = $(!1), [v, b] = $(0), [p, M] = $(!1), { start: k, end: D, word: f } = pt(e, N), C = g ? r(f) : [], L = C[Math.min(v, C.length - 1)], T = (u) => {
+    const S = e.slice(D), q = u.insert.endsWith(":") ? "" : " ", W = `${e.slice(0, k)}${u.insert}${S.startsWith(" ") || !q ? "" : q}${S}`, X = k + u.insert.length + (u.insert.endsWith(":") ? 0 : 1);
+    a(W), b(0), M(!1), requestAnimationFrame(() => {
+      var U, me;
+      (U = h.current) == null || U.focus(), (me = h.current) == null || me.setSelectionRange(X, X), y(X);
     });
   };
-  return /* @__PURE__ */ n("div", { className: "ahv-search", children: [
-    /* @__PURE__ */ n("span", { className: "ahv-input-icon", children: [
-      /* @__PURE__ */ t(O, { name: "search", size: 14 }),
+  return /* @__PURE__ */ s("div", { className: "ahv-search", children: [
+    /* @__PURE__ */ s("span", { className: "ahv-input-icon", children: [
+      /* @__PURE__ */ t(E, { name: "search", size: 14 }),
       /* @__PURE__ */ t(
         "input",
         {
-          ref: u,
+          ref: h,
           className: "ahv-input",
           role: "combobox",
           "aria-label": "Search",
-          "aria-expanded": _.length > 0,
-          "aria-controls": h,
+          "aria-expanded": C.length > 0,
+          "aria-controls": d,
           "aria-autocomplete": "list",
-          "aria-activedescendant": _.length && p ? `${h}-${_.indexOf(q)}` : void 0,
+          "aria-activedescendant": C.length && p ? `${d}-${C.indexOf(L)}` : void 0,
           value: e,
-          placeholder: l,
+          placeholder: i,
           spellCheck: !1,
-          onChange: (m) => {
-            a(m.target.value), k(m.target.selectionStart ?? m.target.value.length), v(!0), N(0), M(!1);
+          onChange: (u) => {
+            a(u.target.value), y(u.target.selectionStart ?? u.target.value.length), m(!0), b(0), M(!1);
           },
-          onSelect: (m) => {
-            const C = m.currentTarget.selectionStart ?? 0;
-            Nt(e, C).start !== S && M(!1), k(C);
+          onSelect: (u) => {
+            const S = u.currentTarget.selectionStart ?? 0;
+            pt(e, S).start !== k && M(!1), y(S);
           },
-          onFocus: () => v(!0),
+          onFocus: () => m(!0),
           onBlur: () => setTimeout(() => {
-            v(!1), M(!1);
+            m(!1), M(!1);
           }, 120),
-          onKeyDown: (m) => {
-            _.length && (m.key === "ArrowDown" || m.key === "ArrowUp") ? (m.preventDefault(), N((C) => p ? (C + (m.key === "ArrowDown" ? 1 : _.length - 1)) % _.length : m.key === "ArrowDown" ? 0 : _.length - 1), M(!0)) : _.length && p && m.key === "Enter" ? (m.preventDefault(), E(q)) : m.key === "Escape" ? (v(!1), M(!1)) : m.key === "Enter" && (v(!1), s());
+          onKeyDown: (u) => {
+            C.length && (u.key === "ArrowDown" || u.key === "ArrowUp") ? (u.preventDefault(), b((S) => p ? (S + (u.key === "ArrowDown" ? 1 : C.length - 1)) % C.length : u.key === "ArrowDown" ? 0 : C.length - 1), M(!0)) : C.length && p && u.key === "Enter" ? (u.preventDefault(), T(L)) : u.key === "Escape" ? (m(!1), M(!1)) : u.key === "Enter" && (m(!1), n());
           }
         }
       )
     ] }),
-    _.length > 0 && /* @__PURE__ */ t("ul", { id: h, role: "listbox", className: "ahv-suggest", children: _.map((m, C) => /* @__PURE__ */ n(
+    C.length > 0 && /* @__PURE__ */ t("ul", { id: d, role: "listbox", className: "ahv-suggest", children: C.map((u, S) => /* @__PURE__ */ s(
       "li",
       {
-        id: `${h}-${C}`,
+        id: `${d}-${S}`,
         role: "option",
-        "aria-selected": p && m === q,
-        className: x(p && m === q && "ahv-suggest-on"),
-        onMouseDown: (P) => {
-          P.preventDefault(), E(m);
+        "aria-selected": p && u === L,
+        className: x(p && u === L && "ahv-suggest-on"),
+        onMouseDown: (q) => {
+          q.preventDefault(), T(u);
         },
         onMouseEnter: () => {
-          N(C), M(!0);
+          b(S), M(!0);
         },
         children: [
-          /* @__PURE__ */ t("span", { className: "ahv-mono", children: m.label }),
-          m.hint && /* @__PURE__ */ t("span", { className: "ahv-dim", children: m.hint })
+          /* @__PURE__ */ t("span", { className: "ahv-mono", children: u.label }),
+          u.hint && /* @__PURE__ */ t("span", { className: "ahv-dim", children: u.hint })
         ]
       },
-      m.insert
+      u.insert
     )) })
   ] });
 }
-function Ge({ label: e, icon: a, children: s, open: r, setOpen: l, badge: o, disabled: c }) {
-  const u = D(null);
-  return K(() => {
+function Ge({ label: e, icon: a, children: n, open: r, setOpen: i, badge: c, disabled: o }) {
+  const h = R(null), d = R(null), [N, y] = $(!1);
+  return Gt(() => {
+    if (!r) return y(!1);
+    d.current && d.current.getBoundingClientRect().left < 8 && y(!0);
+  }, [r]), V(() => {
     if (!r) return;
-    const h = (k) => {
-      u.current && !k.composedPath().includes(u.current) && l(!1);
-    }, b = (k) => k.key === "Escape" && l(!1);
-    return document.addEventListener("mousedown", h), document.addEventListener("keydown", b), () => {
-      document.removeEventListener("mousedown", h), document.removeEventListener("keydown", b);
+    const g = (v) => {
+      h.current && !v.composedPath().includes(h.current) && i(!1);
+    }, m = (v) => v.key === "Escape" && i(!1);
+    return document.addEventListener("mousedown", g), document.addEventListener("keydown", m), () => {
+      document.removeEventListener("mousedown", g), document.removeEventListener("keydown", m);
     };
-  }, [r, l]), /* @__PURE__ */ n("div", { className: "ahv-menu", ref: u, children: [
-    /* @__PURE__ */ n("button", { type: "button", className: "ahv-button", "aria-expanded": r, disabled: c, onClick: () => l(!r), children: [
-      /* @__PURE__ */ t(O, { name: a, size: 14 }),
+  }, [r, i]), /* @__PURE__ */ s("div", { className: "ahv-menu", ref: h, children: [
+    /* @__PURE__ */ s("button", { type: "button", className: "ahv-button", "aria-expanded": r, disabled: o, onClick: () => i(!r), children: [
+      /* @__PURE__ */ t(E, { name: a, size: 14 }),
       e,
-      o && /* @__PURE__ */ t("span", { className: "ahv-count", children: o }),
-      /* @__PURE__ */ t(O, { name: "chevronDown", size: 14 })
+      c && /* @__PURE__ */ t("span", { className: "ahv-count", children: c }),
+      /* @__PURE__ */ t(E, { name: "chevronDown", size: 14 })
     ] }),
-    r && /* @__PURE__ */ t("div", { className: "ahv-menu-list ahv-menu-panel", children: s })
+    r && /* @__PURE__ */ t("div", { ref: d, className: x("ahv-menu-list ahv-menu-panel", N && "ahv-menu-from-start"), children: n })
   ] });
 }
-function Qa({ columns: e, shown: a, onChange: s }) {
-  const [r, l] = T(!1);
-  return /* @__PURE__ */ n(Ge, { label: "Columns", icon: "sliders", open: r, setOpen: l, children: [
+function Ga({ columns: e, shown: a, onChange: n }) {
+  const [r, i] = $(!1);
+  return /* @__PURE__ */ s(Ge, { label: "Columns", icon: "sliders", open: r, setOpen: i, children: [
     /* @__PURE__ */ t("p", { className: "ahv-dim ahv-small", children: "When, who and what always show." }),
-    e.map((o) => /* @__PURE__ */ n("label", { className: "ahv-check", children: [
+    e.map((c) => /* @__PURE__ */ s("label", { className: "ahv-check", children: [
       /* @__PURE__ */ t(
         "input",
         {
           type: "checkbox",
-          checked: a.includes(o.key),
-          onChange: (c) => s(c.target.checked ? [...a, o.key] : a.filter((u) => u !== o.key))
+          checked: a.includes(c.key),
+          onChange: (o) => n(o.target.checked ? [...a, c.key] : a.filter((h) => h !== c.key))
         }
       ),
-      o.label
-    ] }, o.key))
+      c.label
+    ] }, c.key))
   ] });
 }
-function en({ request: e, current: a, onOpen: s }) {
-  var d;
-  const [r, l] = T(!1), o = I("views", () => e("views", { method: "GET" })), [c, u] = T(""), [h, b] = T(!1), [k, y] = T(!1), [v, g] = T(null);
-  if (!((d = o.data) != null && d.enabled)) return null;
-  const N = o.data.views, p = N.find((f) => f.search === a), M = async (f) => {
-    y(!0), g(null);
+function Xa({ request: e, current: a, onOpen: n }) {
+  var D;
+  const [r, i] = $(!1), c = j("views", () => e("views", { method: "GET" })), [o, h] = $(""), [d, N] = $(!1), [y, g] = $(!1), [m, v] = $(null);
+  if (!((D = c.data) != null && D.enabled)) return null;
+  const b = c.data.views, p = b.find((f) => f.search === a), M = async (f) => {
+    g(!0), v(null);
     try {
-      await f(), o.refresh(), u("");
-    } catch (_) {
-      g(_.message);
+      await f(), c.refresh(), h("");
+    } catch (C) {
+      v(C.message);
     } finally {
-      y(!1);
+      g(!1);
     }
-  }, S = (f, _ = c, q = h) => M(() => e("views", { method: "POST", body: { id: f, name: _.trim(), search: a, shared: q } }));
-  return /* @__PURE__ */ n(Ge, { label: p ? p.name : "Views", icon: "layers", open: r, setOpen: l, children: [
-    N.length ? /* @__PURE__ */ t("ul", { className: "ahv-views", children: N.map((f) => /* @__PURE__ */ n("li", { className: x(f === p && "ahv-views-on"), children: [
-      /* @__PURE__ */ n("button", { type: "button", className: "ahv-views-open", onClick: () => {
-        s(f.search), l(!1);
+  }, k = (f, C = o, L = d) => M(() => e("views", { method: "POST", body: { id: f, name: C.trim(), search: a, shared: L } }));
+  return /* @__PURE__ */ s(Ge, { label: p ? p.name : "Views", icon: "layers", open: r, setOpen: i, children: [
+    b.length ? /* @__PURE__ */ t("ul", { className: "ahv-views", children: b.map((f) => /* @__PURE__ */ s("li", { className: x(f === p && "ahv-views-on"), children: [
+      /* @__PURE__ */ s("button", { type: "button", className: "ahv-views-open", onClick: () => {
+        n(f.search), i(!1);
       }, children: [
         /* @__PURE__ */ t("span", { children: f.name }),
         /* @__PURE__ */ t("span", { className: "ahv-dim ahv-small", children: f.mine ? f.shared ? "Shared by you" : "Only you" : `Shared by ${f.owner_name}` })
       ] }),
-      f.mine && /* @__PURE__ */ n("span", { className: "ahv-views-tools", children: [
+      f.mine && /* @__PURE__ */ s("span", { className: "ahv-views-tools", children: [
         f.search !== a && /* @__PURE__ */ t(
           "button",
           {
             type: "button",
             className: "ahv-icon-button",
             title: "Save the current search into this view",
-            disabled: k,
-            onClick: () => S(f.id, f.name, f.shared),
-            children: /* @__PURE__ */ t(O, { name: "refresh", size: 14 })
+            disabled: y,
+            onClick: () => k(f.id, f.name, f.shared),
+            children: /* @__PURE__ */ t(E, { name: "refresh", size: 14 })
           }
         ),
         /* @__PURE__ */ t(
@@ -1013,335 +1037,52 @@ function en({ request: e, current: a, onOpen: s }) {
             type: "button",
             className: "ahv-icon-button",
             title: "Remove this view",
-            disabled: k,
+            disabled: y,
             onClick: () => M(() => e(`views/${f.id}`, { method: "DELETE" })),
-            children: /* @__PURE__ */ t(O, { name: "close", size: 14 })
+            children: /* @__PURE__ */ t(E, { name: "close", size: 14 })
           }
         )
       ] })
     ] }, f.id)) }) : /* @__PURE__ */ t("p", { className: "ahv-dim ahv-small", children: "No saved views yet. Save the current search to come back to it." }),
-    /* @__PURE__ */ n("form", { className: "ahv-views-save", onSubmit: (f) => {
-      f.preventDefault(), c.trim() && S();
+    /* @__PURE__ */ s("form", { className: "ahv-views-save", onSubmit: (f) => {
+      f.preventDefault(), o.trim() && k();
     }, children: [
       /* @__PURE__ */ t(
         "input",
         {
           className: "ahv-input",
-          value: c,
+          value: o,
           maxLength: 80,
           placeholder: "Name this search",
           "aria-label": "View name",
-          onChange: (f) => u(f.target.value)
+          onChange: (f) => h(f.target.value)
         }
       ),
-      /* @__PURE__ */ n("label", { className: "ahv-check", children: [
-        /* @__PURE__ */ t("input", { type: "checkbox", checked: h, onChange: (f) => b(f.target.checked) }),
+      /* @__PURE__ */ s("label", { className: "ahv-check", children: [
+        /* @__PURE__ */ t("input", { type: "checkbox", checked: d, onChange: (f) => N(f.target.checked) }),
         "Share with my team"
       ] }),
-      /* @__PURE__ */ t("button", { type: "submit", className: "ahv-button ahv-button-main", disabled: k || !c.trim(), children: "Save view" }),
-      v && /* @__PURE__ */ t("span", { className: "ahv-bad ahv-small", children: v })
+      /* @__PURE__ */ t("button", { type: "submit", className: "ahv-button ahv-button-main", disabled: y || !o.trim(), children: "Save view" }),
+      m && /* @__PURE__ */ t("span", { className: "ahv-bad ahv-small", children: m })
     ] })
   ] });
 }
-const tn = { active: ["Active", "ahv-tag-ok"], failing: ["Failing", "ahv-tag-bad"], paused: ["Paused", "ahv-tag-warn"] }, kt = { events: "Events", requests: "API requests", both: "Events and API requests" }, Ut = {
-  name: "",
-  kind: "events",
-  query: "",
-  destination: "webhook",
-  url: "",
-  headers: "",
-  secret: "",
-  bucket: "",
-  prefix: "",
-  region: "",
-  endpoint: "",
-  accessKey: "",
-  secretKey: "",
-  start: "now",
-  enabled: !0
-}, Le = (e) => e.destination === "webhook" ? e.target.url ?? "" : `s3://${[e.target.bucket, e.target.prefix].filter(Boolean).join("/")}`, St = (e) => ({
-  ...Ut,
-  id: e.id,
-  name: e.name,
-  kind: e.kind,
-  query: e.query,
-  destination: e.destination,
-  url: e.target.url ?? "",
-  headers: Object.keys(e.target.headers ?? {}).map((a) => `${a}: `).join(`
-`),
-  bucket: e.target.bucket ?? "",
-  prefix: e.target.prefix ?? "",
-  region: e.target.region ?? "",
-  endpoint: e.target.endpoint ?? "",
-  enabled: e.enabled
-});
-function an(e) {
-  const a = {};
-  for (const s of e.split(`
-`)) {
-    const r = s.indexOf(":");
-    r > 0 && (a[s.slice(0, r).trim()] = s.slice(r + 1).trim());
-  }
-  return a;
-}
-function _t(e) {
-  const a = e.destination === "webhook", s = a ? e.secret || void 0 : e.accessKey || e.secretKey ? { access_key: e.accessKey, secret_key: e.secretKey } : void 0;
-  return {
-    id: e.id,
-    name: e.name.trim(),
-    kind: e.kind,
-    query: e.query.trim(),
-    destination: e.destination,
-    target: a ? { url: e.url.trim() } : { bucket: e.bucket.trim(), prefix: e.prefix.trim(), region: e.region.trim(), endpoint: e.endpoint.trim() },
-    // header values are secrets: sent under a name the access log masks, kept encrypted
-    secret: s,
-    secret_headers: a ? an(e.headers) : {},
-    enabled: e.enabled,
-    start: e.start
-  };
-}
-const wt = () => Array.from(crypto.getRandomValues(new Uint8Array(24)), (e) => e.toString(16).padStart(2, "0")).join("");
-function nn({ request: e, kinds: a, list: s, refresh: r }) {
-  const [l, o] = T(null), [c, u] = T(!1), [h, b] = T(null), k = async (d, f) => {
-    u(!0), b(null);
-    try {
-      return await d(), f && b({ ok: !0, text: f }), r(), !0;
-    } catch (_) {
-      return b({ ok: !1, text: _.message }), !1;
-    } finally {
-      u(!1);
-    }
-  }, y = async (d) => {
-    d.preventDefault(), l && await k(() => e("streams", { method: "POST", body: _t(l) }), `${l.name.trim()} saved.`) && o(null);
-  }, v = (d) => k(async () => {
-    const f = await e(`streams/${d.id}/test`, { method: "POST" });
-    if (!f.ok) throw new Error(`${d.name}: ${f.error}`);
-  }, `${d.name}: the test line was delivered.`), g = (d) => k(
-    () => e("streams", { method: "POST", body: { ..._t(St(d)), enabled: !d.enabled } }),
-    `${d.name} ${d.enabled ? "paused" : "resumed"}.`
-  ), N = (d) => window.confirm(`Remove ${d.name}? Nothing more is sent to ${Le(d)}.`) && k(() => e(`streams/${d.id}`, { method: "DELETE" }), `${d.name} removed.`), p = (d) => o((f) => f && { ...f, ...d }), M = a.includes("requests") ? ["events", "requests", "both"] : ["events"], S = l && !M.includes(l.kind) ? [...M, l.kind] : M;
-  return /* @__PURE__ */ n("section", { className: "ahv-streams", "aria-label": "Streams", children: [
-    /* @__PURE__ */ n("div", { className: "ahv-bar", children: [
-      /* @__PURE__ */ t("p", { className: "ahv-dim ahv-small", children: "Each stream sends new records to your own system as they are sealed, a few minutes after they happen. Webhooks receive JSON lines signed with your secret; S3 buckets receive one gzip file per batch." }),
-      !l && /* @__PURE__ */ t(
-        "button",
-        {
-          type: "button",
-          className: "ahv-button ahv-button-main ahv-push-right",
-          onClick: () => {
-            b(null), o({ ...Ut, secret: wt() });
-          },
-          children: "Add stream"
-        }
-      )
-    ] }),
-    s.streams.length > 0 && !l && /* @__PURE__ */ t("ul", { className: "ahv-stream-list", children: s.streams.map((d) => {
-      const [f, _] = tn[d.state];
-      return /* @__PURE__ */ n("li", { children: [
-        /* @__PURE__ */ n("div", { className: "ahv-stream-main", children: [
-          /* @__PURE__ */ t("strong", { children: d.name }),
-          /* @__PURE__ */ t("span", { className: x("ahv-tag", _), children: f }),
-          /* @__PURE__ */ n("span", { className: "ahv-dim ahv-small", children: [
-            kt[d.kind],
-            d.query && /* @__PURE__ */ n(U, { children: [
-              " matching ",
-              /* @__PURE__ */ t("code", { className: "ahv-mono", children: d.query })
-            ] })
-          ] })
-        ] }),
-        /* @__PURE__ */ t("span", { className: "ahv-mono ahv-dim ahv-stream-where", title: Le(d), children: Le(d) }),
-        /* @__PURE__ */ n("span", { className: "ahv-small", children: [
-          /* @__PURE__ */ t("strong", { className: "ahv-num", children: d.delivered.toLocaleString() }),
-          " delivered",
-          d.last_delivered_at && /* @__PURE__ */ n("span", { className: "ahv-dim", children: [
-            ", last ",
-            Fe(d.last_delivered_at) || d.last_delivered_at.slice(0, 16)
-          ] })
-        ] }),
-        /* @__PURE__ */ n("span", { className: "ahv-stream-tools", children: [
-          /* @__PURE__ */ t("button", { type: "button", className: "ahv-link-button", disabled: c, onClick: () => v(d), children: "Send test" }),
-          /* @__PURE__ */ t("button", { type: "button", className: "ahv-link-button", disabled: c, onClick: () => g(d), children: d.enabled ? "Pause" : "Resume" }),
-          /* @__PURE__ */ t("button", { type: "button", className: "ahv-link-button", disabled: c, onClick: () => {
-            b(null), o(St(d));
-          }, children: "Edit" }),
-          /* @__PURE__ */ t("button", { type: "button", className: "ahv-icon-button", title: `Remove ${d.name}`, disabled: c, onClick: () => N(d), children: /* @__PURE__ */ t(O, { name: "close", size: 14 }) })
-        ] }),
-        d.state === "failing" && d.error && /* @__PURE__ */ n("span", { className: "ahv-bad ahv-small", children: [
-          d.error,
-          ". It is tried again shortly."
-        ] })
-      ] }, d.id);
-    }) }),
-    !s.streams.length && !l && /* @__PURE__ */ t("p", { className: "ahv-dim ahv-small", children: "No streams yet." }),
-    l && /* @__PURE__ */ n("form", { className: "ahv-stream-form", onSubmit: y, children: [
-      /* @__PURE__ */ n("label", { className: "ahv-field", children: [
-        /* @__PURE__ */ t("span", { children: "Name" }),
-        /* @__PURE__ */ t("input", { className: "ahv-input", required: !0, maxLength: 80, value: l.name, placeholder: "CRM intake", onChange: (d) => p({ name: d.target.value }) })
-      ] }),
-      /* @__PURE__ */ n("label", { className: "ahv-field", children: [
-        /* @__PURE__ */ t("span", { children: "Records" }),
-        /* @__PURE__ */ t("select", { className: "ahv-input", value: l.kind, disabled: S.length < 2, onChange: (d) => p({ kind: d.target.value }), children: S.map((d) => /* @__PURE__ */ t("option", { value: d, children: kt[d] }, d)) })
-      ] }),
-      /* @__PURE__ */ n("label", { className: "ahv-field ahv-field-wide", children: [
-        /* @__PURE__ */ n("span", { children: [
-          "Only records matching ",
-          /* @__PURE__ */ t("em", { className: "ahv-dim", children: "(optional, the search language)" })
-        ] }),
-        /* @__PURE__ */ t(
-          "input",
-          {
-            className: "ahv-input ahv-mono",
-            maxLength: 500,
-            value: l.query,
-            placeholder: "action:trade.* -result:success",
-            onChange: (d) => p({ query: d.target.value })
-          }
-        )
-      ] }),
-      /* @__PURE__ */ n("div", { className: "ahv-field ahv-field-wide", children: [
-        /* @__PURE__ */ t("span", { children: "Send to" }),
-        /* @__PURE__ */ t("div", { className: "ahv-segment", role: "group", "aria-label": "Destination", children: ["webhook", "s3"].map((d) => /* @__PURE__ */ t(
-          "button",
-          {
-            type: "button",
-            "aria-pressed": l.destination === d,
-            disabled: !!l.id,
-            onClick: () => p({ destination: d, secret: d === "webhook" && !l.id ? wt() : "" }),
-            children: d === "webhook" ? "Webhook" : "S3 bucket"
-          },
-          d
-        )) })
-      ] }),
-      l.destination === "webhook" ? /* @__PURE__ */ n(U, { children: [
-        /* @__PURE__ */ n("label", { className: "ahv-field ahv-field-wide", children: [
-          /* @__PURE__ */ n("span", { children: [
-            "URL ",
-            /* @__PURE__ */ t("em", { className: "ahv-dim", children: "(https, on the internet)" })
-          ] }),
-          /* @__PURE__ */ t(
-            "input",
-            {
-              className: "ahv-input ahv-mono",
-              type: "url",
-              required: !0,
-              value: l.url,
-              placeholder: "https://crm.example.com/activity",
-              onChange: (d) => p({ url: d.target.value })
-            }
-          )
-        ] }),
-        /* @__PURE__ */ n("label", { className: "ahv-field ahv-field-wide", children: [
-          /* @__PURE__ */ n("span", { children: [
-            "Signing secret ",
-            /* @__PURE__ */ t("em", { className: "ahv-dim", children: l.id ? "(blank keeps the current one while the URL's host stays the same)" : "(copy it to your receiver: it is not shown again)" })
-          ] }),
-          /* @__PURE__ */ t(
-            "input",
-            {
-              className: "ahv-input ahv-mono",
-              minLength: 16,
-              required: !l.id,
-              value: l.secret,
-              autoComplete: "off",
-              onChange: (d) => p({ secret: d.target.value })
-            }
-          )
-        ] }),
-        /* @__PURE__ */ n("label", { className: "ahv-field ahv-field-wide", children: [
-          /* @__PURE__ */ n("span", { children: [
-            "Headers ",
-            /* @__PURE__ */ t("em", { className: "ahv-dim", children: '(one "Name: value" a line, kept encrypted; on an edit a blank value keeps the stored one)' })
-          ] }),
-          /* @__PURE__ */ t(
-            "textarea",
-            {
-              className: "ahv-input ahv-textarea ahv-mono",
-              rows: 2,
-              value: l.headers,
-              placeholder: "Authorization: Bearer …",
-              onChange: (d) => p({ headers: d.target.value })
-            }
-          )
-        ] })
-      ] }) : /* @__PURE__ */ n(U, { children: [
-        /* @__PURE__ */ n("label", { className: "ahv-field", children: [
-          /* @__PURE__ */ t("span", { children: "Bucket" }),
-          /* @__PURE__ */ t("input", { className: "ahv-input", required: !0, value: l.bucket, onChange: (d) => p({ bucket: d.target.value }) })
-        ] }),
-        /* @__PURE__ */ n("label", { className: "ahv-field", children: [
-          /* @__PURE__ */ n("span", { children: [
-            "Folder ",
-            /* @__PURE__ */ t("em", { className: "ahv-dim", children: "(optional)" })
-          ] }),
-          /* @__PURE__ */ t("input", { className: "ahv-input", value: l.prefix, placeholder: "activity", onChange: (d) => p({ prefix: d.target.value }) })
-        ] }),
-        /* @__PURE__ */ n("label", { className: "ahv-field", children: [
-          /* @__PURE__ */ n("span", { children: [
-            "Region ",
-            /* @__PURE__ */ t("em", { className: "ahv-dim", children: "(optional)" })
-          ] }),
-          /* @__PURE__ */ t("input", { className: "ahv-input", value: l.region, placeholder: "eu-central-1", onChange: (d) => p({ region: d.target.value }) })
-        ] }),
-        /* @__PURE__ */ n("label", { className: "ahv-field", children: [
-          /* @__PURE__ */ n("span", { children: [
-            "Endpoint ",
-            /* @__PURE__ */ t("em", { className: "ahv-dim", children: "(for R2, MinIO …)" })
-          ] }),
-          /* @__PURE__ */ t("input", { className: "ahv-input ahv-mono", type: "url", value: l.endpoint, onChange: (d) => p({ endpoint: d.target.value }) })
-        ] }),
-        /* @__PURE__ */ n("label", { className: "ahv-field", children: [
-          /* @__PURE__ */ n("span", { children: [
-            "Access key ",
-            l.id && /* @__PURE__ */ t("em", { className: "ahv-dim", children: "(blank keeps it)" })
-          ] }),
-          /* @__PURE__ */ t("input", { className: "ahv-input ahv-mono", required: !l.id, autoComplete: "off", value: l.accessKey, onChange: (d) => p({ accessKey: d.target.value }) })
-        ] }),
-        /* @__PURE__ */ n("label", { className: "ahv-field", children: [
-          /* @__PURE__ */ t("span", { children: "Secret key" }),
-          /* @__PURE__ */ t(
-            "input",
-            {
-              className: "ahv-input ahv-mono",
-              type: "password",
-              required: !l.id || !!l.accessKey,
-              autoComplete: "new-password",
-              value: l.secretKey,
-              onChange: (d) => p({ secretKey: d.target.value })
-            }
-          )
-        ] })
-      ] }),
-      !l.id && /* @__PURE__ */ n("label", { className: "ahv-field ahv-field-wide", children: [
-        /* @__PURE__ */ t("span", { children: "Start with" }),
-        /* @__PURE__ */ n("select", { className: "ahv-input", value: l.start, onChange: (d) => p({ start: d.target.value }), children: [
-          /* @__PURE__ */ t("option", { value: "now", children: "Records from now on" }),
-          /* @__PURE__ */ t("option", { value: "beginning", children: "Everything already kept, then what follows" })
-        ] })
-      ] }),
-      /* @__PURE__ */ n("div", { className: "ahv-bar ahv-field-wide", children: [
-        /* @__PURE__ */ t("button", { type: "submit", className: "ahv-button ahv-button-main", disabled: c, children: c ? "Saving…" : l.id ? "Save changes" : "Add stream" }),
-        /* @__PURE__ */ t("button", { type: "button", className: "ahv-button", disabled: c, onClick: () => o(null), children: "Cancel" })
-      ] })
-    ] }),
-    h && /* @__PURE__ */ t("p", { role: h.ok ? "status" : "alert", className: x("ahv-small", h.ok ? "ahv-ok" : "ahv-bad"), children: h.text })
-  ] });
-}
-const Ct = [
+const ft = [
   { value: "important", label: "Important", hint: "What people did, without the details behind it" },
   { value: "all", label: "All", hint: "Every record, each request's row changes inside its event" },
   { value: "problems", label: "Problems", hint: "Only what failed or was refused" }
-], sn = [
+], Ya = [
   { label: "All requests", search: {} },
   { label: "Changes only", search: { filters: { method: ["POST", "PUT", "PATCH", "DELETE"] } } },
   { label: "Errors", search: { status_from: 400 } }
-], We = [
+], je = [
   { value: "1h", label: "Last hour", minutes: 60 },
   { value: "24h", label: "Last 24 hours", minutes: 1440 },
   { value: "7d", label: "Last 7 days", minutes: 10080 },
   { value: "30d", label: "Last 30 days", minutes: 43200 },
   { value: "all", label: "All time" },
   { value: "custom", label: "Dates…" }
-], $t = {
+], gt = {
   events: [
     { key: "where", label: "Where" },
     { key: "concerning", label: "Concerning" },
@@ -1350,277 +1091,289 @@ const Ct = [
     { key: "ip", label: "IP address" }
   ],
   requests: [{ key: "where", label: "Where" }, { key: "service", label: "Service" }, { key: "ip", label: "IP address" }]
-}, Tt = ["where"], ln = [], zt = "activity-hub-columns", pe = ["kind", "view", "p", "q", "range", "from", "to", "cols"], re = (e) => e ? "all" : "7d";
-function Mt(e, a) {
-  const s = (o) => {
-    const c = e.get(o) ?? "";
-    return Ae(c) ? c : "";
-  }, r = s("from"), l = s("to");
-  return { q: e.get("q") ?? "", from: r, to: l, range: e.get("range") || (r || l ? "custom" : re(a)) };
+}, bt = ["where"], Za = [], Ot = "activity-hub-columns", Lt = "activity-hub-chart", be = ["kind", "view", "p", "q", "range", "from", "to", "cols"], oe = (e) => e ? "all" : "7d";
+function yt(e, a) {
+  const n = (c) => {
+    const o = e.get(c) ?? "";
+    return Ae(o) ? o : "";
+  }, r = n("from"), i = n("to");
+  return { q: e.get("q") ?? "", from: r, to: i, range: e.get("range") || (r || i ? "custom" : oe(a)) };
 }
-function rn(e) {
-  var s;
+function Qa(e) {
+  var n;
   if (e.range === "custom")
-    return { occurred_from: Ae(e.from) ? De(e.from) : void 0, occurred_to: Ae(e.to) ? da(e.to) : void 0 };
-  const a = (s = We.find((r) => r.value === e.range)) == null ? void 0 : s.minutes;
-  return a ? { occurred_from: `${ha(a).slice(0, 16)}:00` } : {};
+    return { occurred_from: Ae(e.from) ? Re(e.from) : void 0, occurred_to: Ae(e.to) ? sa(e.to) : void 0 };
+  const a = (n = je.find((r) => r.value === e.range)) == null ? void 0 : n.minutes;
+  return a ? { occurred_from: `${la(a).slice(0, 16)}:00` } : {};
 }
-function on(e, a, s, r, l) {
-  const o = { ...(s == null ? void 0 : s.search.filters) ?? {} }, c = { kind: e, filters: o, query: r.q.trim() || void 0, ...rn(r) };
-  return e === "events" ? (c.view = a, c.action = s == null ? void 0 : s.search.action, l && Object.assign(c, { related_type: l.type, related_id: l.id })) : (c.status_from = s == null ? void 0 : s.search.status_from, l && (o.actor_id = l.id)), c;
+function en(e, a, n, r, i) {
+  const c = { ...(n == null ? void 0 : n.search.filters) ?? {} }, o = { kind: e, filters: c, query: r.q.trim() || void 0, ...Qa(r) };
+  return e === "events" ? (o.view = a, o.action = n == null ? void 0 : n.search.action, i && Object.assign(o, { related_type: i.type, related_id: i.id })) : (o.status_from = n == null ? void 0 : n.search.status_from, i && (c.actor_id = i.id)), o;
 }
-const cn = (e) => {
+const tn = (e) => {
   const a = new URLSearchParams();
-  return e.forEach((s, r) => pe.includes(r) && a.set(r, s)), a.toString();
+  return e.forEach((n, r) => be.includes(r) && a.set(r, n)), a.toString();
 };
-function dn() {
+function an() {
   try {
-    return JSON.parse(localStorage.getItem(zt) ?? "null") ?? Tt;
+    return localStorage.getItem(Lt) === "hidden";
   } catch {
-    return Tt;
+    return !1;
   }
 }
-function yn({
+function nn() {
+  try {
+    return JSON.parse(localStorage.getItem(Ot) ?? "null") ?? bt;
+  } catch {
+    return bt;
+  }
+}
+function un({
   request: e,
   title: a = "Activity Log",
-  description: s,
-  presets: r = ln,
-  kinds: l = ["events", "requests"],
-  entity: o,
-  params: c,
-  onParamsChange: u,
-  canExport: h = !1,
-  showStatus: b = !0,
-  pageSize: k = 100,
-  liveEveryMs: y = 5e3,
-  className: v
+  description: n,
+  presets: r = Za,
+  kinds: i = ["events", "requests"],
+  entity: c,
+  params: o,
+  onParamsChange: h,
+  canExport: d = !1,
+  showStatus: N = !0,
+  pageSize: y = 100,
+  liveEveryMs: g = 5e3,
+  className: m
 }) {
-  var dt, ht, ut, mt, vt, pt, ft;
-  const [g, N] = T(() => new URLSearchParams()), p = c ?? g, M = Be((i) => u ? u(i) : N(i), [u]), S = p.get("kind") === "requests" && l.includes("requests") ? "requests" : l[0], d = ((dt = Ct.find((i) => i.value === p.get("view"))) == null ? void 0 : dt.value) ?? "important", f = oe(() => S === "events" ? [{ label: "Everything", search: {} }, ...r] : sn, [S, r]), _ = Math.min(Math.max(Number(p.get("p")) || 0, 0), f.length - 1), q = p.has("cols") ? (p.get("cols") || "").split(",").filter(Boolean) : dn(), E = $t[S].filter((i) => q.includes(i.key)), m = oe(() => Mt(p, o), [p, o]), [C, P] = T(m), [Ne, te] = T(p.toString());
-  Ne !== p.toString() && (te(p.toString()), P(m));
-  const [z, de] = T(!1), [ke, he] = T(null), [Se, _e] = T(null), [jt, Xe] = T(!1), [Ye, we] = T(null), Ze = D(null), [, Wt] = T(0);
-  K(() => {
-    const i = setInterval(() => Wt((w) => w + 1), 3e4);
-    return () => clearInterval(i);
+  var ot, dt, ht, ut, mt;
+  const [v, b] = $(() => new URLSearchParams()), p = o ?? v, M = We((l) => h ? h(l) : b(l), [h]), k = p.get("kind") === "requests" && i.includes("requests") ? "requests" : i[0], D = ((ot = ft.find((l) => l.value === p.get("view"))) == null ? void 0 : ot.value) ?? "important", f = de(() => k === "events" ? [{ label: "Everything", search: {} }, ...r] : Ya, [k, r]), C = Math.min(Math.max(Number(p.get("p")) || 0, 0), f.length - 1), L = p.has("cols") ? (p.get("cols") || "").split(",").filter(Boolean) : nn(), T = gt[k].filter((l) => L.includes(l.key)), u = de(() => yt(p, c), [p, c]), [S, q] = $(u), [W, X] = $(p.toString());
+  W !== p.toString() && (X(p.toString()), q(u));
+  const [U, me] = $(!1), [ke, ve] = $(null), [Se, _e] = $(null), [Dt, Xe] = $(!1), [Ye, Ce] = $(null), Ze = R(null), [, At] = $(0);
+  V(() => {
+    const l = setInterval(() => At((_) => _ + 1), 3e4);
+    return () => clearInterval(l);
   }, []);
-  const V = oe(
-    () => on(S, d, f[_], m, o),
-    [S, d, f, _, m, o]
-  ), ue = JSON.stringify(V), R = la(e, V, k, z, y), Ce = D(null), ae = I(ue, () => {
-    var L;
-    const i = ue, w = !V.occurred_from && ((L = Ce.current) == null ? void 0 : L.key) === i;
-    return e("chart", { method: "POST", body: w ? { ...V, occurred_from: Ce.current.from } : V }).then(($) => (V.occurred_from || (Ce.current = { key: i, from: $.occurred_from }), $));
-  }, z ? y : void 0), ne = I("catalog", () => e("catalog", { method: "GET" })), Qe = I(b ? "status" : null, () => e("status", { method: "GET" }), 6e4), se = I(h && !o ? "streams" : null, () => e("streams", { method: "GET" }), 6e4), [et, Bt] = T(!1), tt = (i) => Ga(i.received_at, F(i) ? "events" : "access_logs", Qe.data), at = (i) => () => e("values", { method: "POST", body: { ...V, field: i } }).then((w) => w.values), Ft = I(`${ue}|service`, at("service")), Kt = I(`${ue}|origin`, at("origin")), nt = (i = {}) => {
-    const w = new URLSearchParams(p);
-    for (const Oe of pe) w.delete(Oe);
-    const L = i.kind ?? S;
-    let $ = i.draft ?? C;
-    if (L !== S) {
-      const Oe = new Set(Sa(L));
-      $ = { ...$, q: ie($.q).filter((me) => !me.field || Oe.has(me.field)).map((me) => me.text).join(" ") };
-    }
-    L !== l[0] && w.set("kind", L), (i.view ?? d) !== "important" && w.set("view", i.view ?? d);
-    const G = i.preset ?? (i.kind && i.kind !== S ? 0 : _);
-    return G && w.set("p", String(G)), $.q.trim() && w.set("q", $.q.trim()), $.range !== re(o) && w.set("range", $.range), $.range === "custom" && ($.from && w.set("from", $.from), $.to && w.set("to", $.to)), (i.columns || p.has("cols")) && w.set("cols", (i.columns ?? q).join(",")), w;
-  }, j = (i = {}) => {
-    i.draft && P(i.draft), M(nt(i));
-  }, Vt = (i) => {
+  const J = de(
+    () => en(k, D, f[C], u, c),
+    [k, D, f, C, u, c]
+  ), pe = JSON.stringify(J), A = Qt(e, J, y, U, g), we = R(null), [Q, Rt] = $(an), qt = () => {
+    const l = !Q;
     try {
-      localStorage.setItem(zt, JSON.stringify(i));
+      localStorage.setItem(Lt, l ? "hidden" : "shown");
     } catch {
     }
-    j({ draft: m, columns: i });
-  }, Ht = (i, w) => {
-    const L = ie(m.q).filter(($) => $.field !== i).map(($) => $.text);
-    j({ draft: { ...m, q: [...L, `${i}:${Ie(w)}`].join(" ") } });
-  }, st = (i) => {
-    he(null), i.actor_id ? Ht("actor", i.actor_id) : i.target_type && i.target_id && j({
+    Rt(l);
+  }, le = j(Q ? null : pe, () => {
+    var O;
+    const l = pe, _ = !J.occurred_from && ((O = we.current) == null ? void 0 : O.key) === l;
+    return e("chart", { method: "POST", body: _ ? { ...J, occurred_from: we.current.from } : J }).then((w) => (J.occurred_from || (we.current = { key: l, from: w.occurred_from }), w));
+  }, U ? g : void 0), re = j("catalog", () => e("catalog", { method: "GET" })), Qe = j(N ? "status" : null, () => e("status", { method: "GET" }), 6e4), et = (l) => Fa(l.received_at, F(l) ? "events" : "access_logs", Qe.data), tt = (l) => () => e("values", { method: "POST", body: { ...J, field: l } }).then((_) => _.values), Pt = j(`${pe}|service`, tt("service")), It = j(`${pe}|origin`, tt("origin")), at = (l = {}) => {
+    const _ = new URLSearchParams(p);
+    for (const Oe of be) _.delete(Oe);
+    const O = l.kind ?? k;
+    let w = l.draft ?? S;
+    if (O !== k) {
+      const Oe = new Set(fa(O));
+      w = { ...w, q: ce(w.q).filter((fe) => !fe.field || Oe.has(fe.field)).map((fe) => fe.text).join(" ") };
+    }
+    O !== i[0] && _.set("kind", O), (l.view ?? D) !== "important" && _.set("view", l.view ?? D);
+    const Y = l.preset ?? (l.kind && l.kind !== k ? 0 : C);
+    return Y && _.set("p", String(Y)), w.q.trim() && _.set("q", w.q.trim()), w.range !== oe(c) && _.set("range", w.range), w.range === "custom" && (w.from && _.set("from", w.from), w.to && _.set("to", w.to)), (l.columns || p.has("cols")) && _.set("cols", (l.columns ?? L).join(",")), _;
+  }, z = (l = {}) => {
+    l.draft && q(l.draft), M(at(l));
+  }, Ut = (l) => {
+    try {
+      localStorage.setItem(Ot, JSON.stringify(l));
+    } catch {
+    }
+    z({ draft: u, columns: l });
+  }, zt = (l, _) => {
+    const O = ce(u.q).filter((w) => w.field !== l).map((w) => w.text);
+    z({ draft: { ...u, q: [...O, `${l}:${Pe(_)}`].join(" ") } });
+  }, nt = (l) => {
+    ve(null), l.actor_id ? zt("actor", l.actor_id) : l.target_type && l.target_id && z({
       kind: "events",
       view: "all",
       preset: 0,
-      draft: { q: `on:${i.target_type}:${Ie(i.target_id)}`, range: "all", from: "", to: "" }
+      draft: { q: `on:${l.target_type}:${Pe(l.target_id)}`, range: "all", from: "", to: "" }
     });
-  }, Jt = (i) => {
-    const w = C.q.trim();
-    P({ ...C, q: `${w ? `${w} ` : ""}${i}:` }), requestAnimationFrame(() => {
-      const L = Ze.current;
-      L && (L.focus(), L.setSelectionRange(L.value.length, L.value.length));
+  }, jt = (l) => {
+    const _ = S.q.trim();
+    q({ ...S, q: `${_ ? `${_} ` : ""}${l}:` }), requestAnimationFrame(() => {
+      const O = Ze.current;
+      O && (O.focus(), O.setSelectionRange(O.value.length, O.value.length));
     });
-  }, Gt = C.q.trim() !== m.q.trim() || C.range !== m.range || C.from !== m.from || C.to !== m.to, le = !!(C.range === "custom" && C.from && C.to && C.to < C.from), $e = D(null), lt = D(null), { hasMore: it, loadMore: Te, more: H, pageCount: rt } = R;
-  K(() => {
-    if (!$e.current || !it || H.loading || H.error || rt >= qe) return;
-    const i = new IntersectionObserver(([w]) => w.isIntersecting && Te(), { root: lt.current, rootMargin: "240px" });
-    return i.observe($e.current), () => i.disconnect();
-  }, [it, Te, H.loading, H.error, rt, R.rows.length]);
-  const ot = async (i) => {
+  }, Wt = S.q.trim() !== u.q.trim() || S.range !== u.range || S.from !== u.from || S.to !== u.to, ie = !!(S.range === "custom" && S.from && S.to && S.to < S.from), $e = R(null), st = R(null), { hasMore: lt, loadMore: Me, more: K, pageCount: rt } = A;
+  V(() => {
+    if (!$e.current || !lt || K.loading || K.error || rt >= xe) return;
+    const l = new IntersectionObserver(([_]) => _.isIntersecting && Me(), { root: st.current, rootMargin: "240px" });
+    return l.observe($e.current), () => l.disconnect();
+  }, [lt, Me, K.loading, K.error, rt, A.rows.length]);
+  const it = async (l) => {
     Xe(!1), _e(0);
     try {
-      const { rows: w, more: L } = await pa(e, V, _e);
-      L && we(`Only the newest ${ve.toLocaleString()} rows were exported. Narrow the dates for the rest.`);
-      const $ = (/* @__PURE__ */ new Date()).toISOString().slice(0, 16).replace(/[-:T]/g, ""), G = `activity-${o ? `${o.type}-${o.id}-` : ""}${S}-${$}`;
-      i === "csv" ? Pe(ga(S, w), `${G}.csv`, "text/csv;charset=utf-8") : Pe(ba(w), `${G}.jsonl`, "application/x-ndjson");
-    } catch (w) {
-      we(`Export failed: ${w.message}`);
+      const { rows: _, more: O } = await oa(e, J, _e);
+      O && Ce(`Only the newest ${ge.toLocaleString()} rows were exported. Narrow the dates for the rest.`);
+      const w = (/* @__PURE__ */ new Date()).toISOString().slice(0, 16).replace(/[-:T]/g, ""), Y = `activity-${c ? `${c.type}-${c.id}-` : ""}${k}-${w}`;
+      l === "csv" ? qe(ha(k, _), `${Y}.csv`, "text/csv;charset=utf-8") : qe(ua(_), `${Y}.jsonl`, "application/x-ndjson");
+    } catch (_) {
+      Ce(`Export failed: ${_.message}`);
     } finally {
       _e(null);
     }
-  }, Me = S === "events" ? "events" : "requests", Ee = ((ht = ne.data) == null ? void 0 : ht.actor_types) ?? {}, ct = ((ut = ne.data) == null ? void 0 : ut.entities) ?? {}, Xt = (i) => {
-    var w, L;
-    if (i.field === "action") return ((L = (w = ne.data) == null ? void 0 : w.actions[i.value]) == null ? void 0 : L.title) ?? i.value;
-    if (i.field === "actor_type") return Ee[i.value] ?? i.value;
-    if (i.field === "on") {
-      const [$, ...G] = i.value.split(":");
-      return `${ct[$] ?? A($)} ${G.join(":")}`;
+  }, Te = k === "events" ? "events" : "requests", Ee = ((dt = re.data) == null ? void 0 : dt.actor_types) ?? {}, ct = ((ht = re.data) == null ? void 0 : ht.entities) ?? {}, Bt = (l) => {
+    var _, O;
+    if (l.field === "action") return ((O = (_ = re.data) == null ? void 0 : _.actions[l.value]) == null ? void 0 : O.title) ?? l.value;
+    if (l.field === "actor_type") return Ee[l.value] ?? l.value;
+    if (l.field === "on") {
+      const [w, ...Y] = l.value.split(":");
+      return `${ct[w] ?? P(w)} ${Y.join(":")}`;
     }
-    return i.value;
-  }, J = R.rows, Yt = { service: Ft.data ?? [], origin: Kt.data ?? [] }, Zt = 3 + E.length;
-  return o && !(o.type && o.id) ? /* @__PURE__ */ t("div", { className: x("ahv ahv-log", v), children: /* @__PURE__ */ n(Z, { children: [
+    return l.value;
+  }, G = A.rows, Ht = { service: Pt.data ?? [], origin: It.data ?? [] }, Ft = 3 + T.length;
+  return c && !(c.type && c.id) ? /* @__PURE__ */ t("div", { className: x("ahv ahv-log", m), children: /* @__PURE__ */ s(ae, { children: [
     "Nothing to show: no ",
-    o.type || "record",
+    c.type || "record",
     " chosen."
-  ] }) }) : /* @__PURE__ */ n("div", { className: x("ahv ahv-log", v), children: [
-    /* @__PURE__ */ n("header", { className: "ahv-head", children: [
-      /* @__PURE__ */ n("div", { children: [
-        /* @__PURE__ */ n("h2", { className: "ahv-title", children: [
-          /* @__PURE__ */ t(O, { name: "log", size: 18 }),
-          o && a === "Activity Log" ? "Activity" : a
+  ] }) }) : /* @__PURE__ */ s("div", { className: x("ahv ahv-log", m), children: [
+    /* @__PURE__ */ s("header", { className: "ahv-head", children: [
+      /* @__PURE__ */ s("div", { children: [
+        /* @__PURE__ */ s("h2", { className: "ahv-title", children: [
+          /* @__PURE__ */ t(E, { name: "log", size: 18 }),
+          c && a === "Activity Log" ? "Activity" : a
         ] }),
-        /* @__PURE__ */ t("p", { className: "ahv-dim", children: s ?? (o ? `Everything about ${o.label}, and the API requests it made itself. Times are UTC.` : "Every action and API request, kept permanently and sealed. Times are UTC.") })
+        /* @__PURE__ */ t("p", { className: "ahv-dim", children: n ?? (c ? `Everything about ${c.label}, and the API requests it made itself. Times are UTC.` : "Every action and API request, kept permanently and sealed. Times are UTC.") })
       ] }),
-      /* @__PURE__ */ n("div", { className: "ahv-actions", children: [
-        !o && /* @__PURE__ */ t(
-          en,
+      /* @__PURE__ */ s("div", { className: "ahv-actions", children: [
+        !c && /* @__PURE__ */ t(
+          Xa,
           {
             request: e,
-            current: cn(nt({ draft: m })),
-            onOpen: (i) => {
-              const w = new URLSearchParams(p);
-              for (const L of pe) w.delete(L);
-              new URLSearchParams(i).forEach((L, $) => pe.includes($) && w.set($, L)), M(w);
+            current: tn(at({ draft: u })),
+            onOpen: (l) => {
+              const _ = new URLSearchParams(p);
+              for (const O of be) _.delete(O);
+              new URLSearchParams(l).forEach((O, w) => be.includes(w) && _.set(w, O)), M(_);
             }
           }
         ),
-        /* @__PURE__ */ t(Qa, { columns: $t[S], shown: q, onChange: Vt }),
-        h && /* @__PURE__ */ n(
+        /* @__PURE__ */ t(Ga, { columns: gt[k], shown: L, onChange: Ut }),
+        /* @__PURE__ */ s(
+          "button",
+          {
+            type: "button",
+            className: "ahv-button",
+            "aria-pressed": !Q,
+            onClick: qt,
+            title: Q ? "Show the activity chart" : "Hide the activity chart",
+            children: [
+              /* @__PURE__ */ t(E, { name: "chart", size: 14 }),
+              Q ? "Show chart" : "Hide chart"
+            ]
+          }
+        ),
+        d && /* @__PURE__ */ s(
           Ge,
           {
             label: Se === null ? "Export" : `Exporting… ${Se.toLocaleString()}`,
             icon: "download",
-            open: jt,
+            open: Dt,
             setOpen: Xe,
-            disabled: Se !== null || !J.length,
+            disabled: Se !== null || !G.length,
             children: [
-              /* @__PURE__ */ t("button", { type: "button", role: "menuitem", onClick: () => ot("csv"), children: "CSV, for spreadsheets" }),
-              /* @__PURE__ */ t("button", { type: "button", role: "menuitem", onClick: () => ot("jsonl"), children: "JSON Lines, for other tools" })
+              /* @__PURE__ */ t("button", { type: "button", role: "menuitem", onClick: () => it("csv"), children: "CSV, for spreadsheets" }),
+              /* @__PURE__ */ t("button", { type: "button", role: "menuitem", onClick: () => it("jsonl"), children: "JSON Lines, for other tools" })
             ]
           }
         ),
-        ((mt = se.data) == null ? void 0 : mt.enabled) && /* @__PURE__ */ n(
+        /* @__PURE__ */ s(
           "button",
           {
             type: "button",
-            className: "ahv-button",
-            "aria-expanded": et,
-            onClick: () => Bt((i) => !i),
-            title: "Send the log to your own systems as it is written",
-            children: [
-              /* @__PURE__ */ t(O, { name: "send", size: 14 }),
-              "Streams",
-              se.data.streams.some((i) => i.state === "failing") && /* @__PURE__ */ t("span", { className: "ahv-count ahv-count-bad", children: "!" })
-            ]
-          }
-        ),
-        /* @__PURE__ */ n(
-          "button",
-          {
-            type: "button",
-            className: x("ahv-button", z && "ahv-button-live"),
-            "aria-pressed": z,
+            className: x("ahv-button", U && "ahv-button-live"),
+            "aria-pressed": U,
             title: "Check for new activity every few seconds",
-            onClick: () => de((i) => !i),
+            onClick: () => me((l) => !l),
             children: [
-              /* @__PURE__ */ t(O, { name: "live", size: 14, className: x(z && "ahv-pulse") }),
-              z ? "Live" : "Go live"
+              /* @__PURE__ */ t(E, { name: "live", size: 14, className: x(U && "ahv-pulse") }),
+              U ? "Live" : "Go live"
             ]
           }
         ),
-        /* @__PURE__ */ n(
+        /* @__PURE__ */ s(
           "button",
           {
             type: "button",
             className: "ahv-button",
-            disabled: R.refreshing && !R.error,
+            disabled: A.refreshing && !A.error,
             onClick: () => {
-              R.refresh(), ae.refresh();
+              A.refresh(), le.refresh();
             },
             children: [
-              /* @__PURE__ */ t(O, { name: "refresh", size: 14, className: x(R.refreshing && !z && "ahv-spin") }),
+              /* @__PURE__ */ t(E, { name: "refresh", size: 14, className: x(A.refreshing && !U && "ahv-spin") }),
               "Refresh"
             ]
           }
         )
       ] })
     ] }),
-    et && ((vt = se.data) == null ? void 0 : vt.enabled) && /* @__PURE__ */ t(nn, { request: e, kinds: l, list: se.data, refresh: se.refresh }),
-    b && !o && /* @__PURE__ */ t(Xa, { request: e, status: Qe.data }),
-    /* @__PURE__ */ n("div", { className: "ahv-filters", children: [
-      /* @__PURE__ */ n("div", { className: "ahv-bar", children: [
-        l.length > 1 && /* @__PURE__ */ t("div", { className: "ahv-segment", role: "group", "aria-label": "Records", children: l.map((i) => /* @__PURE__ */ t("button", { type: "button", "aria-pressed": S === i, onClick: () => j({ kind: i, draft: m }), children: i === "events" ? "Events" : "API requests" }, i)) }),
-        S === "events" && /* @__PURE__ */ t("div", { className: "ahv-segment", role: "group", "aria-label": "Show", children: Ct.map((i) => /* @__PURE__ */ t(
+    N && !c && /* @__PURE__ */ t(Va, { request: e, status: Qe.data }),
+    /* @__PURE__ */ s("div", { className: "ahv-filters", children: [
+      /* @__PURE__ */ s("div", { className: "ahv-bar", children: [
+        i.length > 1 && /* @__PURE__ */ t("div", { className: "ahv-segment", role: "group", "aria-label": "Records", children: i.map((l) => /* @__PURE__ */ t("button", { type: "button", "aria-pressed": k === l, onClick: () => z({ kind: l, draft: u }), children: l === "events" ? "Events" : "API requests" }, l)) }),
+        k === "events" && /* @__PURE__ */ t("div", { className: "ahv-segment", role: "group", "aria-label": "Show", children: ft.map((l) => /* @__PURE__ */ t(
           "button",
           {
             type: "button",
-            title: i.hint,
-            "aria-pressed": d === i.value,
-            onClick: () => j({ view: i.value, draft: m }),
-            children: i.label
+            title: l.hint,
+            "aria-pressed": D === l.value,
+            onClick: () => z({ view: l.value, draft: u }),
+            children: l.label
           },
-          i.value
+          l.value
         )) }),
-        f.length > 1 && /* @__PURE__ */ t("div", { className: "ahv-chips", role: "group", "aria-label": "Presets", children: f.map((i, w) => /* @__PURE__ */ t(
+        f.length > 1 && /* @__PURE__ */ t("div", { className: "ahv-chips", role: "group", "aria-label": "Presets", children: f.map((l, _) => /* @__PURE__ */ t(
           "button",
           {
             type: "button",
             className: "ahv-chip",
-            "aria-pressed": _ === w,
-            onClick: () => j({ preset: w, draft: m }),
-            children: i.label
+            "aria-pressed": C === _,
+            onClick: () => z({ preset: _, draft: u }),
+            children: l.label
           },
-          i.label
+          l.label
         )) })
       ] }),
-      /* @__PURE__ */ n("div", { className: "ahv-searchbar", children: [
+      /* @__PURE__ */ s("div", { className: "ahv-searchbar", children: [
         /* @__PURE__ */ t(
-          Za,
+          Ka,
           {
-            value: C.q,
+            value: S.q,
             inputRef: Ze,
-            onChange: (i) => P({ ...C, q: i }),
-            onSubmit: () => !le && j({ draft: C }),
-            suggestions: (i) => wa(i, S, ne.data, Yt),
-            placeholder: S === "events" ? "Search: words, or actor:… action:trade.* -result:success on:account:100234" : "Search: words, or actor:… method:POST status:4xx route:/trading/*"
+            onChange: (l) => q({ ...S, q: l }),
+            onSubmit: () => !ie && z({ draft: S }),
+            suggestions: (l) => ba(l, k, re.data, Ht),
+            placeholder: k === "events" ? "Search: words, or actor:… action:trade.* -result:success on:account:100234" : "Search: words, or actor:… method:POST status:4xx route:/trading/*"
           }
         ),
         /* @__PURE__ */ t(
           "select",
           {
             className: "ahv-input ahv-range",
-            value: C.range,
+            value: S.range,
             "aria-label": "When",
-            onChange: (i) => P({ ...C, range: i.target.value }),
-            children: We.map((i) => /* @__PURE__ */ t("option", { value: i.value, children: i.label }, i.value))
+            onChange: (l) => q({ ...S, range: l.target.value }),
+            children: je.map((l) => /* @__PURE__ */ t("option", { value: l.value, children: l.label }, l.value))
           }
         ),
-        C.range === "custom" && /* @__PURE__ */ n("span", { className: "ahv-pair", children: [
+        S.range === "custom" && /* @__PURE__ */ s("span", { className: "ahv-pair", children: [
           /* @__PURE__ */ t(
             "input",
             {
               type: "date",
               className: "ahv-input",
-              value: C.from,
+              value: S.from,
               "aria-label": "From (UTC)",
-              "aria-invalid": le || void 0,
-              onChange: (i) => P({ ...C, from: i.target.value })
+              "aria-invalid": ie || void 0,
+              onChange: (l) => q({ ...S, from: l.target.value })
             }
           ),
           /* @__PURE__ */ t(
@@ -1628,265 +1381,284 @@ function yn({
             {
               type: "date",
               className: "ahv-input",
-              value: C.to,
+              value: S.to,
               "aria-label": "To (UTC)",
-              "aria-invalid": le || void 0,
-              onChange: (i) => P({ ...C, to: i.target.value })
+              "aria-invalid": ie || void 0,
+              onChange: (l) => q({ ...S, to: l.target.value })
             }
           )
         ] }),
-        /* @__PURE__ */ t("button", { type: "button", className: "ahv-button ahv-button-main", disabled: le, onClick: () => j({ draft: C }), children: "Search" })
+        /* @__PURE__ */ t("button", { type: "button", className: "ahv-button ahv-button-main", disabled: ie, onClick: () => z({ draft: S }), children: "Search" })
       ] }),
-      le && /* @__PURE__ */ t("em", { className: "ahv-bad ahv-small", children: "The end date is before the start date" }),
-      /* @__PURE__ */ n("div", { className: "ahv-bar ahv-add", children: [
+      ie && /* @__PURE__ */ t("em", { className: "ahv-bad ahv-small", children: "The end date is before the start date" }),
+      /* @__PURE__ */ s("div", { className: "ahv-bar ahv-add", children: [
         /* @__PURE__ */ t("span", { className: "ahv-dim ahv-small", children: "Add" }),
-        Ke(S).filter((i) => !(o && (i.field === "on" || S === "requests" && i.field === "actor"))).slice(0, 8).map((i) => /* @__PURE__ */ t("button", { type: "button", className: "ahv-link-button", title: i.hint, onClick: () => Jt(i.field), children: i.label }, i.field)),
-        Gt && /* @__PURE__ */ t("span", { className: "ahv-warn ahv-small ahv-push-right", children: "Not searched yet: press Enter or Search" })
+        He(k).filter((l) => !(c && (l.field === "on" || k === "requests" && l.field === "actor"))).slice(0, 8).map((l) => /* @__PURE__ */ t("button", { type: "button", className: "ahv-link-button", title: l.hint, onClick: () => jt(l.field), children: l.label }, l.field)),
+        Wt && /* @__PURE__ */ t("span", { className: "ahv-warn ahv-small ahv-push-right", children: "Not searched yet: press Enter or Search" })
       ] }),
-      (ie(m.q).length > 0 || m.range !== re(o)) && /* @__PURE__ */ n("div", { className: "ahv-applied", children: [
-        ie(m.q).map((i) => /* @__PURE__ */ n("span", { className: x("ahv-pill", i.negated && "ahv-pill-not"), children: [
-          /* @__PURE__ */ n("span", { className: "ahv-dim", children: [
-            i.negated ? "Not " : "",
-            i.field ? `${_a(i.field)}:` : "Text:"
+      (ce(u.q).length > 0 || u.range !== oe(c)) && /* @__PURE__ */ s("div", { className: "ahv-applied", children: [
+        ce(u.q).map((l) => /* @__PURE__ */ s("span", { className: x("ahv-pill", l.negated && "ahv-pill-not"), children: [
+          /* @__PURE__ */ s("span", { className: "ahv-dim", children: [
+            l.negated ? "Not " : "",
+            l.field ? `${ga(l.field)}:` : "Text:"
           ] }),
           " ",
-          Xt(i),
-          /* @__PURE__ */ t("button", { type: "button", "aria-label": `Remove ${i.text}`, onClick: () => j({ draft: { ...m, q: Na(m.q, i) } }), children: /* @__PURE__ */ t(O, { name: "close", size: 12 }) })
-        ] }, i.text)),
-        m.range !== re(o) && /* @__PURE__ */ n("span", { className: "ahv-pill", children: [
+          Bt(l),
+          /* @__PURE__ */ t("button", { type: "button", "aria-label": `Remove ${l.text}`, onClick: () => z({ draft: { ...u, q: va(u.q, l) } }), children: /* @__PURE__ */ t(E, { name: "close", size: 12 }) })
+        ] }, l.text)),
+        u.range !== oe(c) && /* @__PURE__ */ s("span", { className: "ahv-pill", children: [
           /* @__PURE__ */ t("span", { className: "ahv-dim", children: "When:" }),
           " ",
-          m.range === "custom" ? [m.from && ee(W(De(m.from))), m.to && ee(W(De(m.to)))].filter(Boolean).join(" – ") || "Any date" : (pt = We.find((i) => i.value === m.range)) == null ? void 0 : pt.label,
+          u.range === "custom" ? [u.from && Z(I(Re(u.from))), u.to && Z(I(Re(u.to)))].filter(Boolean).join(" – ") || "Any date" : (ut = je.find((l) => l.value === u.range)) == null ? void 0 : ut.label,
           /* @__PURE__ */ t(
             "button",
             {
               type: "button",
               "aria-label": "Remove the time range",
-              onClick: () => j({ draft: { ...m, range: re(o), from: "", to: "" } }),
-              children: /* @__PURE__ */ t(O, { name: "close", size: 12 })
+              onClick: () => z({ draft: { ...u, range: oe(c), from: "", to: "" } }),
+              children: /* @__PURE__ */ t(E, { name: "close", size: 12 })
             }
           )
         ] }),
-        /* @__PURE__ */ t("button", { type: "button", className: "ahv-link-button", onClick: () => j({ preset: 0, draft: Mt(new URLSearchParams(), o) }), children: "Clear all" })
+        /* @__PURE__ */ t("button", { type: "button", className: "ahv-link-button", onClick: () => z({ preset: 0, draft: yt(new URLSearchParams(), c) }), children: "Clear all" })
       ] })
     ] }),
-    ae.error && !ae.data ? null : /* @__PURE__ */ t(Oa, { chart: ae.data, noun: Me, loading: ae.loading }),
-    Ye && /* @__PURE__ */ t(Z, { action: /* @__PURE__ */ t("button", { type: "button", className: "ahv-icon-button", "aria-label": "Dismiss", onClick: () => we(null), children: /* @__PURE__ */ t(O, { name: "close", size: 14 }) }), children: Ye }),
-    R.error && J.length > 0 && /* @__PURE__ */ n(Z, { tone: "bad", action: /* @__PURE__ */ t("button", { type: "button", className: "ahv-button", onClick: R.refresh, children: "Retry" }), children: [
+    Q || le.error && !le.data ? null : /* @__PURE__ */ t(Ca, { chart: le.data, noun: Te, loading: le.loading }),
+    Ye && /* @__PURE__ */ t(ae, { action: /* @__PURE__ */ t("button", { type: "button", className: "ahv-icon-button", "aria-label": "Dismiss", onClick: () => Ce(null), children: /* @__PURE__ */ t(E, { name: "close", size: 14 }) }), children: Ye }),
+    A.error && G.length > 0 && /* @__PURE__ */ s(ae, { tone: "bad", action: /* @__PURE__ */ t("button", { type: "button", className: "ahv-button", onClick: A.refresh, children: "Retry" }), children: [
       "Couldn't load newer activity: ",
-      R.error.message
+      A.error.message
     ] }),
-    R.error && !J.length ? /* @__PURE__ */ t(Z, { tone: "bad", action: /* @__PURE__ */ t("button", { type: "button", className: "ahv-button", onClick: R.refresh, children: "Retry" }), children: R.error.message }) : R.loading ? /* @__PURE__ */ t(Ve, {}) : J.length ? /* @__PURE__ */ n("div", { className: "ahv-table-wrap", ref: lt, children: [
-      /* @__PURE__ */ n("table", { className: "ahv-table", children: [
-        /* @__PURE__ */ t("thead", { children: /* @__PURE__ */ n("tr", { children: [
+    A.error && !G.length ? /* @__PURE__ */ t(ae, { tone: "bad", action: /* @__PURE__ */ t("button", { type: "button", className: "ahv-button", onClick: A.refresh, children: "Retry" }), children: A.error.message }) : A.loading ? /* @__PURE__ */ t(Ve, {}) : G.length ? /* @__PURE__ */ s("div", { className: "ahv-table-wrap", ref: st, children: [
+      /* @__PURE__ */ s("table", { className: "ahv-table", children: [
+        /* @__PURE__ */ t("thead", { children: /* @__PURE__ */ s("tr", { children: [
           /* @__PURE__ */ t("th", { children: "When (UTC)" }),
           /* @__PURE__ */ t("th", { children: "Who" }),
-          /* @__PURE__ */ t("th", { children: S === "events" ? "What happened" : "Request" }),
-          E.map((i) => /* @__PURE__ */ t("th", { children: i.label }, i.key))
+          /* @__PURE__ */ t("th", { children: k === "events" ? "What happened" : "Request" }),
+          T.map((l) => /* @__PURE__ */ t("th", { children: l.label }, l.key))
         ] }) }),
-        /* @__PURE__ */ t("tbody", { children: J.map((i, w) => {
-          var L;
-          return /* @__PURE__ */ n(aa, { children: [
-            i.occurred_at.slice(0, 10) !== ((L = J[w - 1]) == null ? void 0 : L.occurred_at.slice(0, 10)) && /* @__PURE__ */ t("tr", { className: "ahv-day", children: /* @__PURE__ */ t("td", { colSpan: Zt, children: oa(i.occurred_at) }) }),
-            /* @__PURE__ */ n(
+        /* @__PURE__ */ t("tbody", { children: G.map((l, _) => {
+          var O;
+          return /* @__PURE__ */ s(Xt, { children: [
+            l.occurred_at.slice(0, 10) !== ((O = G[_ - 1]) == null ? void 0 : O.occurred_at.slice(0, 10)) && /* @__PURE__ */ t("tr", { className: "ahv-day", children: /* @__PURE__ */ t("td", { colSpan: Ft, children: aa(l.occurred_at) }) }),
+            /* @__PURE__ */ s(
               "tr",
               {
                 tabIndex: 0,
-                className: x("ahv-row", F(i) && i.outcome !== "success" && "ahv-row-problem"),
-                onClick: () => he(i),
-                onKeyDown: ($) => {
-                  $.target === $.currentTarget && ($.key === "Enter" || $.key === " ") && ($.preventDefault(), he(i));
+                className: x("ahv-row", F(l) && l.outcome !== "success" && "ahv-row-problem"),
+                onClick: () => ve(l),
+                onKeyDown: (w) => {
+                  w.target === w.currentTarget && (w.key === "Enter" || w.key === " ") && (w.preventDefault(), ve(l));
                 },
                 children: [
-                  /* @__PURE__ */ t("td", { children: /* @__PURE__ */ t(xa, { value: i.occurred_at, seal: tt(i) }) }),
+                  /* @__PURE__ */ t("td", { children: /* @__PURE__ */ t(wa, { value: l.occurred_at, seal: et(l) }) }),
                   /* @__PURE__ */ t("td", { children: /* @__PURE__ */ t(
-                    Ra,
+                    Ta,
                     {
-                      row: i,
+                      row: l,
                       actorTypes: Ee,
-                      onFocus: o && S === "requests" ? void 0 : () => st({ actor_id: i.actor_id })
+                      onFocus: c && k === "requests" ? void 0 : () => nt({ actor_id: l.actor_id })
                     }
                   ) }),
-                  /* @__PURE__ */ t("td", { children: F(i) ? /* @__PURE__ */ t(Pa, { row: i }) : /* @__PURE__ */ t(Dt, { row: i }) }),
-                  E.map(($) => /* @__PURE__ */ t("td", { className: "ahv-cell", children: $.key === "where" ? /* @__PURE__ */ t(Aa, { row: i }) : $.key === "service" ? /* @__PURE__ */ t("span", { className: "ahv-dim", children: A(i.service) }) : $.key === "ip" ? /* @__PURE__ */ t("span", { className: "ahv-mono ahv-dim", children: i.ip || "—" }) : F(i) ? $.key === "result" ? i.outcome === "success" ? /* @__PURE__ */ t("span", { className: "ahv-dim", children: "success" }) : /* @__PURE__ */ t(ye, { outcome: i.outcome }) : i.target_type ? /* @__PURE__ */ n("span", { children: [
-                    ct[i.target_type] ?? A(i.target_type),
+                  /* @__PURE__ */ t("td", { children: F(l) ? /* @__PURE__ */ t(La, { row: l }) : /* @__PURE__ */ t(Mt, { row: l }) }),
+                  T.map((w) => /* @__PURE__ */ t("td", { className: "ahv-cell", children: w.key === "where" ? /* @__PURE__ */ t(Ea, { row: l }) : w.key === "service" ? /* @__PURE__ */ t("span", { className: "ahv-dim", children: P(l.service) }) : w.key === "ip" ? /* @__PURE__ */ t("span", { className: "ahv-mono ahv-dim", children: l.ip || "—" }) : F(l) ? w.key === "result" ? l.outcome === "success" ? /* @__PURE__ */ t("span", { className: "ahv-dim", children: "success" }) : /* @__PURE__ */ t(se, { outcome: l.outcome }) : l.target_type ? /* @__PURE__ */ s("span", { children: [
+                    ct[l.target_type] ?? P(l.target_type),
                     " ",
-                    /* @__PURE__ */ t("span", { className: "ahv-mono", children: i.target_name || i.target_id })
-                  ] }) : "—" : null }, $.key))
+                    /* @__PURE__ */ t("span", { className: "ahv-mono", children: l.target_name || l.target_id })
+                  ] }) : "—" : null }, w.key))
                 ]
               }
             )
-          ] }, i.id);
+          ] }, l.id);
         }) })
       ] }),
       /* @__PURE__ */ t("div", { ref: $e, "aria-hidden": "true" })
-    ] }) : /* @__PURE__ */ n("div", { className: "ahv-empty", children: [
-      /* @__PURE__ */ t(O, { name: "log", size: 28 }),
-      /* @__PURE__ */ n("strong", { children: [
+    ] }) : /* @__PURE__ */ s("div", { className: "ahv-empty", children: [
+      /* @__PURE__ */ t(E, { name: "log", size: 28 }),
+      /* @__PURE__ */ s("strong", { children: [
         "No ",
-        Me,
+        Te,
         " match"
       ] }),
-      /* @__PURE__ */ t("span", { className: "ahv-dim", children: S === "events" && d === "important" ? "Try All, or a wider time range." : "Try a wider time range or fewer filters." })
+      /* @__PURE__ */ t("span", { className: "ahv-dim", children: k === "events" && D === "important" ? "Try All, or a wider time range." : "Try a wider time range or fewer filters." })
     ] }),
-    J.length > 0 && /* @__PURE__ */ n("footer", { className: "ahv-foot", children: [
-      /* @__PURE__ */ n("span", { className: "ahv-dim ahv-num", children: [
-        ua(J.length, Me.slice(0, -1)),
+    G.length > 0 && /* @__PURE__ */ s("footer", { className: "ahv-foot", children: [
+      /* @__PURE__ */ s("span", { className: "ahv-dim ahv-num", children: [
+        ra(G.length, Te.slice(0, -1)),
         " shown",
-        z ? " · Live keeps the newest page" : R.trimmed ? " · the newest were let go to keep the list light; Refresh brings them back" : R.hasMore ? "" : " · that is all of them"
+        U ? " · Live keeps the newest page" : A.trimmed ? " · the newest were let go to keep the list light; Refresh brings them back" : A.hasMore ? "" : " · that is all of them"
       ] }),
-      H.error && /* @__PURE__ */ n("span", { className: "ahv-bad ahv-small", children: [
+      K.error && /* @__PURE__ */ s("span", { className: "ahv-bad ahv-small", children: [
         "Couldn't load more: ",
-        H.error.message
+        K.error.message
       ] }),
-      R.hasMore && /* @__PURE__ */ t("button", { type: "button", className: "ahv-button", onClick: Te, disabled: H.loading, children: H.loading ? "Loading…" : "Load more" })
+      A.hasMore && /* @__PURE__ */ t("button", { type: "button", className: "ahv-button", onClick: Me, disabled: K.loading, children: K.loading ? "Loading…" : "Load more" })
     ] }),
     /* @__PURE__ */ t(
-      It,
+      Et,
       {
         request: e,
         row: ke,
-        onClose: () => he(null),
-        onFocus: o ? void 0 : st,
+        onClose: () => ve(null),
+        onFocus: c ? void 0 : nt,
         actorTypes: Ee,
-        entities: (ft = ne.data) == null ? void 0 : ft.entities,
-        seal: ke ? tt(ke) : null
+        entities: (mt = re.data) == null ? void 0 : mt.entities,
+        seal: ke ? et(ke) : null
       }
     )
   ] });
 }
-const Et = 500;
-function Nn({ request: e, entity: a, view: s = "all", action: r, newestFirst: l = !1, header: o, more: c, className: u }) {
-  var M, S, d, f;
-  const h = a.type && a.id ? `${a.type}:${a.id}:${s}:${r ?? ""}` : null, b = I(h, () => e("search", {
+const Nt = 500;
+function mn({ request: e, entity: a, view: n = "all", action: r, newestFirst: i = !1, header: c, more: o, simple: h = !1, className: d }) {
+  var k, D, f, C;
+  const N = a.type && a.id ? `${a.type}:${a.id}:${n}:${r ?? ""}` : null, y = j(N, () => e("search", {
     method: "POST",
-    body: { kind: "events", filters: {}, related_type: a.type, related_id: a.id, view: s, action: r, limit: Et, details: !0 }
-  })), k = I("catalog", () => e("catalog", { method: "GET" })), [y, v] = T(null), g = ((M = b.data) == null ? void 0 : M.items) ?? [], N = l ? g : [...g].reverse(), p = !!((S = b.data) != null && S.next_cursor);
-  return /* @__PURE__ */ n("div", { className: x("ahv ahv-timeline", u), children: [
-    b.error ? /* @__PURE__ */ n(Z, { tone: "bad", action: /* @__PURE__ */ t("button", { type: "button", className: "ahv-button", onClick: b.refresh, children: "Retry" }), children: [
+    body: { kind: "events", filters: {}, related_type: a.type, related_id: a.id, view: n, action: r, limit: Nt, details: !0 }
+  })), g = j("catalog", () => e("catalog", { method: "GET" })), [m, v] = $(null), b = ((k = y.data) == null ? void 0 : k.items) ?? [], p = i ? b : [...b].reverse(), M = !!((D = y.data) != null && D.next_cursor);
+  return /* @__PURE__ */ s("div", { className: x("ahv ahv-timeline", h && "ahv-timeline-simple", d), children: [
+    y.error ? /* @__PURE__ */ s(ae, { tone: "bad", action: /* @__PURE__ */ t("button", { type: "button", className: "ahv-button", onClick: y.refresh, children: "Retry" }), children: [
       "Couldn't load: ",
-      b.error.message
-    ] }) : b.loading && !b.data ? /* @__PURE__ */ t(Ve, { rows: 4 }) : N.length ? /* @__PURE__ */ n(U, { children: [
-      o == null ? void 0 : o(g.length ? [...g].reverse() : [], p),
-      p && /* @__PURE__ */ n("p", { className: "ahv-dim ahv-small", children: [
+      y.error.message
+    ] }) : y.loading && !y.data ? /* @__PURE__ */ t(Ve, { rows: 4 }) : p.length ? /* @__PURE__ */ s(H, { children: [
+      c == null ? void 0 : c(b.length ? [...b].reverse() : [], M),
+      M && /* @__PURE__ */ s("p", { className: "ahv-dim ahv-small", children: [
         "Showing the newest ",
-        Et,
+        Nt,
         " steps.",
-        c && /* @__PURE__ */ n(U, { children: [
+        o && /* @__PURE__ */ s(H, { children: [
           " ",
-          c
+          o
         ] })
       ] }),
-      /* @__PURE__ */ n("h3", { className: "ahv-eyebrow", children: [
-        N.length,
+      !h && /* @__PURE__ */ s("h3", { className: "ahv-eyebrow", children: [
+        p.length,
         " step",
-        N.length === 1 ? "" : "s",
+        p.length === 1 ? "" : "s",
         ", ",
-        l ? "newest" : "oldest",
+        i ? "newest" : "oldest",
         " first"
       ] }),
-      /* @__PURE__ */ t("ol", { className: "ahv-steps", children: N.map((_) => /* @__PURE__ */ t(un, { event: _, onOpen: v }, _.id)) })
+      /* @__PURE__ */ t("ol", { className: "ahv-steps", children: p.map((L) => h ? /* @__PURE__ */ t(ln, { event: L }, L.id) : /* @__PURE__ */ t(sn, { event: L, onOpen: v }, L.id)) })
     ] }) : /* @__PURE__ */ t("p", { className: "ahv-dim", children: "Nothing has been recorded about this yet." }),
     /* @__PURE__ */ t(
-      It,
+      Et,
       {
         request: e,
-        row: y,
+        row: m,
         onClose: () => v(null),
-        actorTypes: (d = k.data) == null ? void 0 : d.actor_types,
-        entities: (f = k.data) == null ? void 0 : f.entities
+        actorTypes: (f = g.data) == null ? void 0 : f.actor_types,
+        entities: (C = g.data) == null ? void 0 : C.entities
       }
     )
   ] });
 }
-const hn = (e) => e.outcome !== "success" ? { icon: "alert", tone: "rose" } : { icon: e.icon ?? (e.category === "data" ? "layers" : "log"), tone: e.tone ?? "neutral" };
-function un({ event: e, onOpen: a }) {
-  var k, y, v, g, N;
-  const [s, r] = T(!1), { icon: l, tone: o } = hn(e), c = e.children ?? [], u = e.children_count ?? c.length, h = e.category !== "data" && ((k = e.change_list) != null && k.length) ? e.change_list : null, b = !!((y = e.details) != null && y.length) || u > 0;
-  return /* @__PURE__ */ n("li", { className: `ahv-step ahv-tone-${o}`, children: [
-    /* @__PURE__ */ t("span", { className: "ahv-step-icon", "aria-hidden": "true", children: /* @__PURE__ */ t(O, { name: l, size: 14 }) }),
-    /* @__PURE__ */ n("div", { className: "ahv-step-main", children: [
-      /* @__PURE__ */ n("div", { className: "ahv-step-head", children: [
-        /* @__PURE__ */ n("div", { className: "ahv-stack", children: [
-          /* @__PURE__ */ n("button", { type: "button", className: "ahv-step-title", onClick: () => a(e), title: "Open the full detail", children: [
+function sn({ event: e, onOpen: a }) {
+  var y, g, m, v, b;
+  const [n, r] = $(!1), { icon: i, tone: c } = Fe(e), o = e.children ?? [], h = e.children_count ?? o.length, d = e.category !== "data" && ((y = e.change_list) != null && y.length) ? e.change_list : null, N = !!((g = e.details) != null && g.length) || h > 0;
+  return /* @__PURE__ */ s("li", { className: `ahv-step ahv-tone-${c}`, children: [
+    /* @__PURE__ */ t("span", { className: "ahv-step-icon", "aria-hidden": "true", children: /* @__PURE__ */ t(E, { name: i, size: 14 }) }),
+    /* @__PURE__ */ s("div", { className: "ahv-step-main", children: [
+      /* @__PURE__ */ s("div", { className: "ahv-step-head", children: [
+        /* @__PURE__ */ s("div", { className: "ahv-stack", children: [
+          /* @__PURE__ */ s("button", { type: "button", className: "ahv-step-title", onClick: () => a(e), title: "Open the full detail", children: [
             e.title,
-            /* @__PURE__ */ t(ye, { outcome: e.outcome })
+            /* @__PURE__ */ t(se, { outcome: e.outcome })
           ] }),
-          /* @__PURE__ */ t(mn, { event: e })
+          /* @__PURE__ */ t(xt, { event: e })
         ] }),
-        /* @__PURE__ */ n("span", { className: "ahv-step-when", title: `${e.occurred_at} UTC`, children: [
-          /* @__PURE__ */ t("span", { className: "ahv-mono", children: be(e.occurred_at) }),
-          /* @__PURE__ */ t("span", { className: "ahv-dim", children: Fe(e.occurred_at) || ee(W(e.occurred_at)) })
+        /* @__PURE__ */ s("span", { className: "ahv-step-when", title: `${e.occurred_at} UTC`, children: [
+          /* @__PURE__ */ t("span", { className: "ahv-mono", children: ue(e.occurred_at) }),
+          /* @__PURE__ */ t("span", { className: "ahv-dim", children: Be(e.occurred_at) || Z(I(e.occurred_at)) })
         ] })
       ] }),
-      e.outcome !== "success" ? /* @__PURE__ */ t("p", { className: "ahv-step-problem", children: e.summary }) : (v = e.facts) != null && v.length ? /* @__PURE__ */ t(Pt, { facts: e.facts }) : !h && e.summary !== e.title ? /* @__PURE__ */ t("p", { className: "ahv-sentence", children: e.summary }) : null,
-      h && /* @__PURE__ */ t(Je, { changes: h, valueLabel: "Set to" }),
-      b && /* @__PURE__ */ n("button", { type: "button", className: "ahv-disclose", "aria-expanded": s, onClick: () => r((p) => !p), children: [
-        /* @__PURE__ */ t(O, { name: "chevronDown", size: 13, className: x(s && "ahv-turned") }),
-        s ? "Hide" : [((g = e.details) == null ? void 0 : g.length) && "Details", u > 0 && `${u} record change${u === 1 ? "" : "s"}`].filter(Boolean).join(" and ")
+      e.outcome !== "success" ? /* @__PURE__ */ t("p", { className: "ahv-step-problem", children: e.summary }) : (m = e.facts) != null && m.length ? /* @__PURE__ */ t(Tt, { facts: e.facts }) : !d && e.summary !== e.title ? /* @__PURE__ */ t("p", { className: "ahv-sentence", children: e.summary }) : null,
+      d && /* @__PURE__ */ t(Ke, { changes: d, valueLabel: "Set to" }),
+      N && /* @__PURE__ */ s("button", { type: "button", className: "ahv-disclose", "aria-expanded": n, onClick: () => r((p) => !p), children: [
+        /* @__PURE__ */ t(E, { name: "chevronDown", size: 13, className: x(n && "ahv-turned") }),
+        n ? "Hide" : [((v = e.details) == null ? void 0 : v.length) && "Details", h > 0 && `${h} record change${h === 1 ? "" : "s"}`].filter(Boolean).join(" and ")
       ] }),
-      s && /* @__PURE__ */ n("div", { className: "ahv-step-more", children: [
-        (N = e.details) != null && N.length ? /* @__PURE__ */ t(He, { items: e.details.map((p) => [p.label, p.value]), mono: !0 }) : null,
-        u > 0 && /* @__PURE__ */ t(vn, { records: c, counted: u, onOpen: a, parent: e })
+      n && /* @__PURE__ */ s("div", { className: "ahv-step-more", children: [
+        (b = e.details) != null && b.length ? /* @__PURE__ */ t(Je, { items: e.details.map((p) => [p.label, p.value]), mono: !0 }) : null,
+        h > 0 && /* @__PURE__ */ t(rn, { records: o, counted: h, onOpen: a, parent: e })
       ] })
     ] })
   ] });
 }
-function mn({ event: e }) {
-  return /* @__PURE__ */ n("span", { className: "ahv-byline", children: [
-    /* @__PURE__ */ t("span", { className: x("ahv-avatar ahv-avatar-small", e.actor_type === "system" && "ahv-avatar-system"), "aria-hidden": "true", children: xt(e.actor) }),
+function ln({ event: e }) {
+  const { icon: a, tone: n } = Fe(e);
+  return /* @__PURE__ */ s("li", { className: `ahv-step ahv-tone-${n}`, children: [
+    /* @__PURE__ */ t("span", { className: "ahv-step-icon", "aria-hidden": "true", children: /* @__PURE__ */ t(E, { name: a, size: 16 }) }),
+    /* @__PURE__ */ t("div", { className: "ahv-step-main", children: /* @__PURE__ */ s("div", { className: "ahv-step-head", children: [
+      /* @__PURE__ */ s("div", { className: "ahv-stack", children: [
+        /* @__PURE__ */ s("span", { className: "ahv-step-title", children: [
+          e.title,
+          /* @__PURE__ */ t(se, { outcome: e.outcome })
+        ] }),
+        e.summary !== e.title && /* @__PURE__ */ t("p", { className: "ahv-sentence", children: e.summary }),
+        /* @__PURE__ */ t(xt, { event: e, simple: !0 })
+      ] }),
+      /* @__PURE__ */ s("span", { className: "ahv-step-when", title: `${e.occurred_at} UTC`, children: [
+        /* @__PURE__ */ t("span", { className: "ahv-mono", children: ue(e.occurred_at) }),
+        /* @__PURE__ */ t("span", { className: "ahv-dim", children: Be(e.occurred_at) || Z(I(e.occurred_at)) })
+      ] })
+    ] }) })
+  ] });
+}
+function xt({ event: e, simple: a = !1 }) {
+  return /* @__PURE__ */ s("span", { className: "ahv-byline", children: [
+    /* @__PURE__ */ t("span", { className: x("ahv-avatar ahv-avatar-small", e.actor_type === "system" && "ahv-avatar-system"), "aria-hidden": "true", children: St(e.actor) }),
     [
       e.actor,
-      e.actor_label,
-      e.origin && A(e.origin).toUpperCase(),
+      !a && e.actor_label,
+      e.origin && P(e.origin).toUpperCase(),
       e.actor_type !== "system" && e.device,
       e.country,
       e.ip
-    ].filter(Boolean).map((a, s) => /* @__PURE__ */ t("span", { className: x(s === 0 ? "ahv-strong" : "ahv-sep"), children: a }, s))
+    ].filter(Boolean).map((n, r) => /* @__PURE__ */ t("span", { className: x(r === 0 ? "ahv-strong" : "ahv-sep"), children: n }, r))
   ] });
 }
-function vn({ records: e, counted: a, onOpen: s, parent: r }) {
-  const [l, o] = T(null);
-  return /* @__PURE__ */ n("div", { className: "ahv-records", children: [
-    /* @__PURE__ */ n("table", { className: "ahv-changes ahv-records-table", children: [
-      /* @__PURE__ */ t("thead", { children: /* @__PURE__ */ n("tr", { children: [
+function rn({ records: e, counted: a, onOpen: n, parent: r }) {
+  const [i, c] = $(null);
+  return /* @__PURE__ */ s("div", { className: "ahv-records", children: [
+    /* @__PURE__ */ s("table", { className: "ahv-changes ahv-records-table", children: [
+      /* @__PURE__ */ t("thead", { children: /* @__PURE__ */ s("tr", { children: [
         /* @__PURE__ */ t("th", { children: "Record" }),
         /* @__PURE__ */ t("th", { children: "Change" }),
         /* @__PURE__ */ t("th", { children: "Fields" }),
         /* @__PURE__ */ t("th", { children: /* @__PURE__ */ t("span", { className: "ahv-hidden", children: "Detail" }) })
       ] }) }),
-      /* @__PURE__ */ t("tbody", { children: e.map((c) => {
-        const u = c.change_list ?? [], h = l === c.id;
+      /* @__PURE__ */ t("tbody", { children: e.map((o) => {
+        const h = o.change_list ?? [], d = i === o.id;
         return /* @__PURE__ */ t(
-          pn,
+          cn,
           {
-            record: c,
-            fields: u.length,
-            open: h,
-            onToggle: () => o(h ? null : c.id),
-            onOpen: () => s(c),
-            children: h && /* @__PURE__ */ t("tr", { className: "ahv-records-fields", children: /* @__PURE__ */ t("td", { colSpan: 4, children: /* @__PURE__ */ t(Je, { changes: u }) }) })
+            record: o,
+            fields: h.length,
+            open: d,
+            onToggle: () => c(d ? null : o.id),
+            onOpen: () => n(o),
+            children: d && /* @__PURE__ */ t("tr", { className: "ahv-records-fields", children: /* @__PURE__ */ t("td", { colSpan: 4, children: /* @__PURE__ */ t(Ke, { changes: h }) }) })
           },
-          c.id
+          o.id
         );
       }) })
     ] }),
-    a > e.length && /* @__PURE__ */ n("button", { type: "button", className: "ahv-link-button", onClick: () => s(r), children: [
+    a > e.length && /* @__PURE__ */ s("button", { type: "button", className: "ahv-link-button", onClick: () => n(r), children: [
       a - e.length,
       " more in the full detail"
     ] })
   ] });
 }
-function pn({ record: e, fields: a, open: s, onToggle: r, onOpen: l, children: o }) {
-  const c = e.action === "data.created" ? "Created" : e.action === "data.deleted" ? "Deleted" : "Updated";
-  return /* @__PURE__ */ n(U, { children: [
-    /* @__PURE__ */ n("tr", { children: [
-      /* @__PURE__ */ t("td", { children: /* @__PURE__ */ n("button", { type: "button", className: "ahv-disclose", "aria-expanded": s, disabled: !a, onClick: r, children: [
-        /* @__PURE__ */ t(O, { name: "chevronRight", size: 12, className: x(s && "ahv-turned-right") }),
+function cn({ record: e, fields: a, open: n, onToggle: r, onOpen: i, children: c }) {
+  const o = e.action === "data.created" ? "Created" : e.action === "data.deleted" ? "Deleted" : "Updated";
+  return /* @__PURE__ */ s(H, { children: [
+    /* @__PURE__ */ s("tr", { children: [
+      /* @__PURE__ */ t("td", { children: /* @__PURE__ */ s("button", { type: "button", className: "ahv-disclose", "aria-expanded": n, disabled: !a, onClick: r, children: [
+        /* @__PURE__ */ t(E, { name: "chevronRight", size: 12, className: x(n && "ahv-turned-right") }),
         e.summary.replace(/^(Created|Updated|Deleted) /, "").split(":")[0]
       ] }) }),
-      /* @__PURE__ */ t("td", { children: c }),
-      /* @__PURE__ */ t("td", { className: "ahv-dim", children: e.action === "data.updated" ? (e.change_list ?? []).slice(0, 3).map((u) => u.label).join(", ") + (a > 3 ? ` and ${a - 3} more` : "") : `${a} value${a === 1 ? "" : "s"}` }),
+      /* @__PURE__ */ t("td", { children: o }),
+      /* @__PURE__ */ t("td", { className: "ahv-dim", children: e.action === "data.updated" ? (e.change_list ?? []).slice(0, 3).map((h) => h.label).join(", ") + (a > 3 ? ` and ${a - 3} more` : "") : `${a} value${a === 1 ? "" : "s"}` }),
       /* @__PURE__ */ t("td", { className: "ahv-cell-end", children: /* @__PURE__ */ t(
         "button",
         {
@@ -1894,18 +1666,18 @@ function pn({ record: e, fields: a, open: s, onToggle: r, onOpen: l, children: o
           className: "ahv-icon-button",
           title: "Open the record's full detail",
           "aria-label": "Open the record's full detail",
-          onClick: l,
-          children: /* @__PURE__ */ t(O, { name: "arrowRight", size: 13 })
+          onClick: i,
+          children: /* @__PURE__ */ t(E, { name: "arrowRight", size: 13 })
         }
       ) })
     ] }),
-    o
+    c
   ] });
 }
 export {
-  It as ActivityDetail,
-  yn as ActivityLog,
-  Nn as ActivityTimeline,
-  Xa as IntegrityStatus,
-  za as PanelHost
+  Et as ActivityDetail,
+  un as ActivityLog,
+  mn as ActivityTimeline,
+  Va as IntegrityStatus,
+  Aa as PanelHost
 };

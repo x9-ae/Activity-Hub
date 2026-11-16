@@ -17,8 +17,10 @@ export type ActivityTimelineProps = {
     header?: (events: ActivityEvent[], partial: boolean) => ReactNode;
     /** shown under the last step when older steps were left out, e.g. a link to the full log */
     more?: ReactNode;
+    /** a customer's own feed: each step's title, sentence, when and from where, nothing more */
+    simple?: boolean;
     className?: string;
 };
 /** One entity's story: each step with who did it, from where and its key values, its changes and
  * the record changes behind it one click away, and its full detail on its title. */
-export declare function ActivityTimeline({ request, entity, view, action, newestFirst, header, more, className }: ActivityTimelineProps): import("react/jsx-runtime").JSX.Element;
+export declare function ActivityTimeline({ request, entity, view, action, newestFirst, header, more, simple, className }: ActivityTimelineProps): import("react/jsx-runtime").JSX.Element;

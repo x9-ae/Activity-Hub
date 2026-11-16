@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { ActivityEvent, ApiCall, Change, Fact, Row } from "./types";
+import { type IconName } from "./icons";
 export declare const cx: (...names: (string | false | null | undefined)[]) => string;
 export declare const actorOf: (row: Row) => string;
 export declare const actorLabelOf: (row: Row, actorTypes?: Record<string, string>) => string;
@@ -31,7 +32,12 @@ export declare const StatusTag: ({ status }: {
 export declare const MethodTag: ({ method }: {
     method: string;
 }) => import("react/jsx-runtime").JSX.Element;
-/** What happened, in one sentence, with what is worth seeing next to it. */
+/** An event's icon and colour: its catalog's, or a warning for anything that did not succeed. */
+export declare const markOf: (event: ActivityEvent) => {
+    icon: IconName;
+    tone: string;
+};
+/** What happened: the action's title, its sentence under it, and the record changes behind it on hover. */
 export declare function EventLine({ row }: {
     row: ActivityEvent;
 }): import("react/jsx-runtime").JSX.Element;

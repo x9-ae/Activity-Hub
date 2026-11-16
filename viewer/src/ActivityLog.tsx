@@ -11,7 +11,6 @@ import { ActivityDetail } from "./ActivityDetail"
 import { IntegrityStatus, sealState, type Status } from "./IntegrityStatus"
 import { SearchBox } from "./SearchBox"
 import { ColumnsMenu, Popover, ViewsMenu, type Column } from "./Menus"
-import { Streams, type StreamList } from "./Streams"
 import { CallLine, EventLine, Message, OutcomeTag, Skeleton, When, Where, Who, cx } from "./parts"
 
 const VIEWS: { value: View; label: string; hint: string }[] = [
@@ -42,6 +41,7 @@ const DEFAULT_COLUMNS = ["where"]
 // one empty list for every render: a new one would remake the search each time
 const NO_PRESETS: Preset[] = []
 const COLUMNS_KEY = "activity-hub-columns"
+const CHART_KEY = "activity-hub-chart"
 // the search kept in the address, under these names
 const OWN_PARAMS = ["kind", "view", "p", "q", "range", "from", "to", "cols"]
 type Draft = { q: string; range: string; from: string; to: string }
@@ -110,6 +110,14 @@ const ownParams = (params: URLSearchParams) => {
   return own.toString()
 }
 
+function savedChartHidden(): boolean {
+  try {
+    return localStorage.getItem(CHART_KEY) === "hidden"
+  } catch {
+    return false
+  }
+}
+
 function savedColumns(): string[] {
   try {
     return JSON.parse(localStorage.getItem(COLUMNS_KEY) ?? "null") ?? DEFAULT_COLUMNS
@@ -159,7 +167,13 @@ export function ActivityLog({
   const list = usePages(request, search, pageSize, live, liveEveryMs)
   // over all time the server finds the first record once; the refreshes reuse that start
   const chartStart = useRef<{ key: string; from: string } | null>(null)
-  const chart = useRemote<Chart>(key, () => {
+  const [chartHidden, setChartHidden] = useState(savedChartHidden)
+  const toggleChart = () => {
+    const hidden = !chartHidden
+    try { localStorage.setItem(CHART_KEY, hidden ? "hidden" : "shown") } catch { /* a private window keeps none */ }
+    setChartHidden(hidden)
+  }
+  const chart = useRemote<Chart>(chartHidden ? null : key, () => {
     const asked = key
     const reuse = !search.occurred_from && chartStart.current?.key === asked
     return request("chart", { method: "POST", body: reuse ? { ...search, occurred_from: chartStart.current!.from } : search })
@@ -172,9 +186,6 @@ export function ActivityLog({
   const catalog = useRemote<Catalog>("catalog", () => request("catalog", { method: "GET" }))
   // how far the record is sealed: the strip, and each row's seal mark
   const status = useRemote<Status>(showStatus ? "status" : null, () => request("status", { method: "GET" }), 60_000)
-  // streams are offered to those who may export, while the application keeps them
-  const streams = useRemote<StreamList>(canExport && !entity ? "streams" : null, () => request("streams", { method: "GET" }), 60_000)
-  const [streamsOpen, setStreamsOpen] = useState(false)
   const sealOf = (row: Row) => sealState(row.received_at, isEvent(row) ? "events" : "access_logs", status.data)
   // the values seen in this search, offered while typing app: and service:
   const facet = (field: string) => () =>
@@ -310,19 +321,16 @@ export function ActivityLog({
               setParams(next)
             }} />}
           <ColumnsMenu columns={OPTIONAL[kind]} shown={columns} onChange={setColumns} />
+          <button type="button" className="ahv-button" aria-pressed={!chartHidden} onClick={toggleChart}
+            title={chartHidden ? "Show the activity chart" : "Hide the activity chart"}>
+            <Icon name="chart" size={14} />{chartHidden ? "Show chart" : "Hide chart"}
+          </button>
           {canExport && (
             <Popover label={exporting === null ? "Export" : `Exporting… ${exporting.toLocaleString()}`} icon="download"
               open={exportOpen} setOpen={setExportOpen} disabled={exporting !== null || !rows.length}>
               <button type="button" role="menuitem" onClick={() => exportAs("csv")}>CSV, for spreadsheets</button>
               <button type="button" role="menuitem" onClick={() => exportAs("jsonl")}>JSON Lines, for other tools</button>
             </Popover>
-          )}
-          {streams.data?.enabled && (
-            <button type="button" className="ahv-button" aria-expanded={streamsOpen} onClick={() => setStreamsOpen((o) => !o)}
-              title="Send the log to your own systems as it is written">
-              <Icon name="send" size={14} />Streams
-              {streams.data.streams.some((s) => s.state === "failing") && <span className="ahv-count ahv-count-bad">!</span>}
-            </button>
           )}
           <button type="button" className={cx("ahv-button", live && "ahv-button-live")} aria-pressed={live}
             title="Check for new activity every few seconds" onClick={() => setLive((on) => !on)}>
@@ -334,9 +342,6 @@ export function ActivityLog({
           </button>
         </div>
       </header>
-      {streamsOpen && streams.data?.enabled && (
-        <Streams request={request} kinds={kinds} list={streams.data} refresh={streams.refresh} />
-      )}
       {showStatus && !entity && <IntegrityStatus request={request} status={status.data} />}
 
       <div className="ahv-filters">
@@ -425,7 +430,7 @@ export function ActivityLog({
         )}
       </div>
 
-      {chart.error && !chart.data ? null : <ActivityChart chart={chart.data} noun={noun} loading={chart.loading} />}
+      {chartHidden || (chart.error && !chart.data) ? null : <ActivityChart chart={chart.data} noun={noun} loading={chart.loading} />}
       {notice && <Message action={<button type="button" className="ahv-icon-button" aria-label="Dismiss" onClick={() => setNotice(null)}><Icon name="close" size={14} /></button>}>{notice}</Message>}
       {list.error && rows.length > 0 && (
         <Message tone="bad" action={<button type="button" className="ahv-button" onClick={list.refresh}>Retry</button>}>

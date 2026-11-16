@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import type { ActivityEvent, ApiCall, Change, Fact, Row } from "./types"
 import { isEvent } from "./types"
-import { Icon } from "./icons"
+import { Icon, type IconName } from "./icons"
 import { initials, relativeTime, requestActor, sentenceCase, timeOfDay, words } from "./format"
 
 export const cx = (...names: (string | false | null | undefined)[]) => names.filter(Boolean).join(" ")
@@ -80,17 +80,30 @@ const statusTone = (status: number) => (status >= 500 ? "ahv-tag-bad" : status >
 export const StatusTag = ({ status }: { status: number }) => <span className={cx("ahv-tag ahv-mono", statusTone(status))}>{status}</span>
 export const MethodTag = ({ method }: { method: string }) => <span className={cx("ahv-tag ahv-mono", `ahv-method-${method.toLowerCase()}`)}>{method}</span>
 
-/** What happened, in one sentence, with what is worth seeing next to it. */
+/** An event's icon and colour: its catalog's, or a warning for anything that did not succeed. */
+export const markOf = (event: ActivityEvent): { icon: IconName; tone: string } => {
+  if (event.outcome !== "success") return { icon: "alert", tone: "rose" }
+  return { icon: event.icon ?? (event.category === "data" ? "layers" : "log"), tone: event.tone ?? "neutral" }
+}
+
+/** What happened: the action's title, its sentence under it, and the record changes behind it on hover. */
 export function EventLine({ row }: { row: ActivityEvent }) {
   const folded = row.children_count ?? row.children?.length ?? 0
+  const { icon, tone } = markOf(row)
   return (
-    <span className="ahv-what">
-      {row.importance === "high" && row.outcome === "success" && <span className="ahv-mark" title="Worth attention" />}
-      {row.outcome !== "success" && <Icon name="alert" size={14} className={row.outcome === "failed" ? "ahv-bad" : "ahv-warn"} />}
-      <span className="ahv-sentence">{row.summary}</span>
+    <span className="ahv-what ahv-what-event">
+      <span className={`ahv-what-icon ahv-tone-${tone}`} aria-hidden="true"><Icon name={icon} size={13} /></span>
+      <span className="ahv-what-text">
+        <span className="ahv-what-title">
+          {row.title}
+          <OutcomeTag outcome={row.outcome} />
+          {row.importance === "high" && row.outcome === "success" && <span className="ahv-mark" title="Worth attention" />}
+        </span>
+        {row.summary !== row.title && <span className="ahv-sentence">{row.summary}</span>}
+      </span>
       {folded > 0 && (
-        <span className="ahv-count" title={`${folded} record change${folded === 1 ? "" : "s"} made by the same request`}>
-          <Icon name="layers" size={12} />{folded}
+        <span className="ahv-what-changes" title="Database records changed by the same request; open the row to see them">
+          {folded} change{folded === 1 ? "" : "s"}
         </span>
       )}
     </span>

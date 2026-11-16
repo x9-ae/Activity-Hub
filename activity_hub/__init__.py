@@ -6,9 +6,8 @@ from activity_hub.context import set_actor, activity_context, current_context, f
 from activity_hub.asgi import ActivityMiddleware
 from activity_hub.records import diff
 from activity_hub.integrity import seal_new_rows, verify, daily_seal, check_daily_seal
-from activity_hub.streams import StreamStore, deliver_streams
 
-__version__ = "0.9.0"
+__version__ = "0.10.0"
 
 __all__ = [
     "prepare_database",
@@ -26,7 +25,5 @@ __all__ = [
     "verify",
     "daily_seal",
     "check_daily_seal",
-    "StreamStore",
-    "deliver_streams",
     "diff",
 ]

@@ -50,14 +50,12 @@ UNREACHABLE = "The activity log could not be read; try again shortly"
 NOT_FOUND = "No such event"
 KINDS = ("events", "requests")
 # the groups of routes a router may mount, and the handler each route belongs to
-PARTS = ("search", "chart", "values", "export", "event", "catalog", "views", "integrity", "status", "streams")
+PARTS = ("search", "chart", "values", "export", "event", "catalog", "views", "integrity", "status")
 ROUTE_PART = {"search_log": "search", "chart": "chart", "values": "values", "export": "export", "event_detail": "event",
               "catalog": "catalog", "views": "views", "save_view": "views", "remove_view": "views",
               "verify_day": "integrity", "day_seal": "integrity", "check_proof": "integrity",
-              "integrity_allowed": "integrity", "log_status": "status", "list_streams": "streams", "save_stream": "streams",
-              "remove_stream": "streams", "test_stream": "streams"}
+              "integrity_allowed": "integrity", "log_status": "status"}
 NO_VIEWS = "Saved views are not available here"
-NO_STREAMS = "Streams are not set up on this server"
 EARLIEST_DAY = date(2000, 1, 1)
 # a kept proof names each table's last seal: a few, never thousands
 MAX_PROOF_SEALS = 50
@@ -135,24 +133,6 @@ class Proof(BaseModel):
         if not isinstance(seals, list) or not 0 < len(seals) <= MAX_PROOF_SEALS or not all(a_seal(seal) for seal in seals):
             raise ValueError("not a seal record (activity-seal-<day>.json): it holds seals [{table, window_start, hash}]")
         return value
-
-
-class StreamIn(BaseModel):
-    """A stream to save (activity_hub.streams). secret: the webhook's signing secret, or the bucket's
-    {"access_key", "secret_key"}; secret_headers: the webhook's own headers, {name: value}. Left blank
-    on an update, the stored secret and header values are kept while the stream still goes to the
-    same address. start: "now" sends records from now on, "beginning" everything kept too (a new
-    stream only). Both secret fields are masked in the access log."""
-    id: Optional[str] = None
-    name: str = Field(min_length=1, max_length=80)
-    kind: Literal["events", "requests", "both"] = "events"
-    query: str = Field("", max_length=MAX_QUERY_LENGTH)
-    destination: Literal["webhook", "s3"]
-    target: dict = Field(default_factory=dict)
-    secret: Optional[Union[str, dict]] = None
-    secret_headers: dict[str, str] = Field(default_factory=dict)
-    enabled: bool = True
-    start: Literal["now", "beginning"] = "now"
 
 
 class SavedView(BaseModel):
@@ -279,7 +259,7 @@ def _owner(scope) -> tuple:
 
 
 def activity_router(*, get_reader, authorize, authorize_export=None, authorize_checks=None, record=None,
-                    status=None, parts=PARTS, respond=None, authorize_streams=None, streams=None) -> APIRouter:
+                    status=None, parts=PARTS, respond=None) -> APIRouter:
     """The read routes: POST /search, /chart, /values, /export; GET /events/{id}, /catalog, /status;
     saved views at GET/POST /views and DELETE /views/{id}; integrity checks at POST /integrity/verify,
     GET /integrity/seal/{day} and POST /integrity/check. authorize_checks (the export permission when
@@ -287,9 +267,6 @@ def activity_router(*, get_reader, authorize, authorize_export=None, authorize_c
     may. parts: which groups of routes to mount (see PARTS), e.g. a partner API without views or checks.
     respond: turns every successful answer into the application's own response, e.g. its envelope
     {"status": true, "data": ...}; errors stay HTTPExceptions for its own handlers.
-    streams: a callable returning the StreamStore (activity_hub.streams), or None while the
-    application has none; authorize_streams (the export permission when not given) lets a caller
-    manage its tenant's streams.
     See the module's description."""
     respond = respond or (lambda payload: payload)
     unknown = set(parts) - set(PARTS)
@@ -298,7 +275,6 @@ def activity_router(*, get_reader, authorize, authorize_export=None, authorize_c
     router = APIRouter(tags=["Activity"])
     authorize_export = authorize_export or authorize
     authorize_checks = authorize_checks or authorize_export
-    authorize_streams = authorize_streams or authorize_export
 
     def whole_log(scope) -> None:
         if _scope_filters(scope):
@@ -508,77 +484,6 @@ def activity_router(*, get_reader, authorize, authorize_export=None, authorize_c
         whole_log(scope)
         mismatches = await read(lambda reader: {"mismatches": reader.check_day_seal(proof.record)})
         return respond({"ok": not mismatches["mismatches"], **mismatches})
-
-    def stream_tenant(scope, kind: str | None = None) -> str:
-        """A stream sends whole records of one tenant: a caller held to anything narrower (an actor, some
-        hidden fields, one kind of record, several tenants) sets none up."""
-        forced = _scope_filters(scope)
-        tenant = forced.get("tenant_id") or ""
-        if isinstance(tenant, (list, tuple)):
-            tenant = tenant[0] if len(tenant) == 1 else None
-        if set(forced) - {"tenant_id"} or tenant is None or (scope or {}).get("hide"):
-            raise HTTPException(status_code=403, detail="Streams are set up for a whole company")
-        allowed = (scope or {}).get("kinds") or KINDS
-        if kind and not set({"both": KINDS}.get(kind, (kind,))) <= set(allowed):
-            raise HTTPException(status_code=403, detail=f"The {kind} of the log are not available here")
-        return str(tenant)
-
-    def note(action: str, **fields) -> None:
-        if record is not None:
-            try:
-                record(action, **fields)
-            except Exception as e:
-                logger.error(f"activity hub: {action} not recorded: {e}")
-
-    async def with_streams(work):
-        store = streams() if streams else None
-        if store is None:
-            raise HTTPException(status_code=404, detail=NO_STREAMS)
-        try:
-            return await run_in_threadpool(work, store)
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e))
-        except Exception as e:
-            logger.error(f"activity hub: streams failed: {e}")
-            raise HTTPException(status_code=503, detail=UNREACHABLE)
-
-    @router.get("/streams")
-    async def list_streams(scope=Depends(authorize_streams)):
-        """The company's streams and how each stands (active, failing or paused, what it last
-        delivered); enabled is false while the application keeps no streams."""
-        tenant = stream_tenant(scope)
-        if not streams or streams() is None:
-            return respond({"enabled": False, "streams": []})
-        return respond({"enabled": True, "streams": await with_streams(lambda store: store.list(tenant))})
-
-    @router.post("/streams")
-    async def save_stream(stream: StreamIn, scope=Depends(authorize_streams)):
-        """Saves a stream, or a new version of one of the company's own; its secret is never answered."""
-        tenant = stream_tenant(scope, stream.kind)
-        viewer = (scope or {}).get("viewer") or {}
-        saved = await with_streams(lambda store: store.save(
-            tenant, name=stream.name, kind=stream.kind, destination=stream.destination, target=stream.target,
-            secret=stream.secret, headers=stream.secret_headers, query=stream.query, enabled=stream.enabled,
-            start=stream.start, stream_id=stream.id, created_by=str(viewer.get("name") or viewer.get("id") or "")))
-        place = saved["target"].get("url") or f"s3://{saved['target'].get('bucket', '')}/{saved['target'].get('prefix', '')}"
-        note("activity.stream_saved", tenant_id=tenant or None, target_type="stream", target_id=saved["id"], target_name=saved["name"],
-             metadata={"stream": saved["name"], "kind": saved["kind"], "destination": place.rstrip("/"),
-                       "query": saved["query"], "enabled": saved["enabled"], "start": stream.start if not stream.id else None})
-        return respond(saved)
-
-    @router.delete("/streams/{stream_id}")
-    async def remove_stream(stream_id: str, scope=Depends(authorize_streams)):
-        tenant = stream_tenant(scope)
-        if not await with_streams(lambda store: store.remove(tenant, stream_id)):
-            raise HTTPException(status_code=404, detail="No such stream")
-        note("activity.stream_removed", tenant_id=tenant or None, target_type="stream", target_id=stream_id, metadata={"stream": stream_id})
-        return respond({"removed": True})
-
-    @router.post("/streams/{stream_id}/test")
-    async def test_stream(stream_id: str, scope=Depends(authorize_streams)):
-        """Sends one test line to the stream's destination."""
-        tenant = stream_tenant(scope)
-        return respond(await with_streams(lambda store: store.test(tenant, stream_id)))
 
     @router.get("/status")
     async def log_status(scope=Depends(authorize)):

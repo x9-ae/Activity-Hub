@@ -90,28 +90,31 @@ export function IntegrityStatus({ request, status }: { request: ActivityRequest;
   return (
     <div className="ahv-status-wrap">
       <div className="ahv-status" role="status">
-        <Icon name="shield" size={14} />
-        {status.recording !== undefined && (
-          <span className={cx("ahv-tag", status.recording ? "ahv-tag-ok" : "ahv-tag-bad")}>{status.recording ? "Recording" : "Not recording"}</span>
-        )}
-        {waiting !== undefined && <span>Waiting to be written <strong className="ahv-num">{waiting.toLocaleString()}</strong></span>}
-        {sealed.map(([table, until]) => (
-          <span key={table} className={cx(minutesAgo(until) > BEHIND_MINUTES && "ahv-warn")}
-            title={minutesAgo(until) > BEHIND_MINUTES ? "Sealing is behind" : "Every minute up to this one is sealed"}>
-            {TABLES[table] ?? table} sealed through <strong className="ahv-num">{until}</strong>
-          </span>
-        ))}
-        {daily && (
-          <span>
-            Check of {daily.day}:{" "}
-            <strong className={daily.ok === false ? "ahv-bad" : daily.ok ? "ahv-ok" : "ahv-warn"}>
-              {daily.ok === false ? `${daily.problems ?? ""} problem(s)`.trim() : daily.ok ? "intact" : "not checked"}
-            </strong>
-          </span>
-        )}
+        {(() => {
+          // one line: the oldest table's seal is what holds for the whole log; the rest is in the tooltip
+          const oldest = sealed.map(([, until]) => until).sort()[0]
+          const behind = sealed.some(([, until]) => minutesAgo(until) > BEHIND_MINUTES)
+          const detail = [
+            ...sealed.map(([table, until]) => `${TABLES[table] ?? table} sealed through ${until} UTC`),
+            waiting !== undefined && `${waiting.toLocaleString()} waiting to be written`,
+            daily && `Check of ${daily.day}: ${daily.ok === false ? `${daily.problems ?? ""} problem(s)`.trim() : daily.ok ? "intact" : "not checked"}`,
+          ].filter(Boolean).join("\n")
+          // the time alone today; an older seal keeps its date, or a stop overnight would read as today
+          const shown = oldest?.startsWith(new Date().toISOString().slice(0, 10)) ? oldest.slice(11, 16) : oldest
+          return oldest && (
+            <span className={cx("ahv-seal-chip", behind ? "ahv-warn" : "ahv-ok")} title={detail}>
+              <Icon name={behind ? "alert" : "shield"} size={14} />
+              {behind ? "Sealing is behind, last sealed" : "Sealed up to"} <strong className="ahv-num">{shown}</strong> UTC
+            </span>
+          )
+        })()}
+        {status.recording === false && <span className="ahv-tag ahv-tag-bad">Not recording</span>}
+        {Boolean(waiting) && <span className="ahv-dim">{waiting!.toLocaleString()} waiting to be written</span>}
+        {daily?.ok === false && <span className="ahv-tag ahv-tag-bad">Check of {daily.day}: {daily.problems ?? ""} problem(s)</span>}
         {canCheck && (
-          <button type="button" className="ahv-link-button ahv-push-right" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-            Check integrity
+          <button type="button" className="ahv-button ahv-button-small ahv-push-right" aria-expanded={open} onClick={() => setOpen((o) => !o)}
+            title="Prove that no record was changed or removed since it was sealed">
+            <Icon name="check" size={13} />Verify
           </button>
         )}
       </div>

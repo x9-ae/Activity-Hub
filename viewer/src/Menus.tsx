@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react"
 import type { ActivityRequest } from "./types"
 import { useRemote } from "./remote"
 import { Icon } from "./icons"
@@ -10,6 +10,13 @@ export function Popover({ label, icon, children, open, setOpen, badge, disabled 
   badge?: string; disabled?: boolean
 }) {
   const box = useRef<HTMLDivElement>(null)
+  const panel = useRef<HTMLDivElement>(null)
+  // a panel opens to the left of its button; one that would leave the screen opens to the right
+  const [fromStart, setFromStart] = useState(false)
+  useLayoutEffect(() => {
+    if (!open) return setFromStart(false)
+    if (panel.current && panel.current.getBoundingClientRect().left < 8) setFromStart(true)
+  }, [open])
   useEffect(() => {
     if (!open) return
     // the event's path, not its target: inside a shadow root the page sees only the host element
@@ -24,7 +31,7 @@ export function Popover({ label, icon, children, open, setOpen, badge, disabled 
       <button type="button" className="ahv-button" aria-expanded={open} disabled={disabled} onClick={() => setOpen(!open)}>
         <Icon name={icon} size={14} />{label}{badge && <span className="ahv-count">{badge}</span>}<Icon name="chevronDown" size={14} />
       </button>
-      {open && <div className="ahv-menu-list ahv-menu-panel">{children}</div>}
+      {open && <div ref={panel} className={cx("ahv-menu-list ahv-menu-panel", fromStart && "ahv-menu-from-start")}>{children}</div>}
     </div>
   )
 }

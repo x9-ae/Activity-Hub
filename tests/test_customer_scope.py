@@ -97,7 +97,7 @@ def test_a_router_mounts_only_the_parts_asked_for():
     router = activity_router(get_reader=lambda: None, authorize=client_scope, parts=("search", "event", "export", "catalog"))
     assert sorted(route.path for route in router.routes) == ["/catalog", "/events/{event_id}", "/export", "/search"]
     every = activity_router(get_reader=lambda: None, authorize=client_scope)
-    assert len(every.routes) == 18, "every route belongs to a part"
+    assert len(every.routes) == 14, "every route belongs to a part"
     with pytest.raises(ValueError, match="unknown parts"):
         activity_router(get_reader=lambda: None, authorize=client_scope, parts=("search", "alerts"))
 

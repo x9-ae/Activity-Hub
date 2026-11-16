@@ -17,7 +17,7 @@ import type { ActivityRequest } from "./types"
  * variables the React components read. */
 abstract class ActivityElement extends HTMLElement {
   static observedAttributes = ["entity-type", "entity-id", "entity-label", "title", "kinds", "can-export", "action",
-    "newest-first", "view", "no-status"]
+    "newest-first", "view", "no-status", "simple"]
   private root?: Root
   private panel?: HTMLDivElement
   private requester?: ActivityRequest
@@ -91,7 +91,7 @@ class ActivityTimelineElement extends ActivityElement {
     return (
       <ActivityTimeline request={request} entity={{ type: this.getAttribute("entity-type") || "", id: this.getAttribute("entity-id") || "" }}
         action={this.getAttribute("action") || undefined} newestFirst={this.hasAttribute("newest-first")}
-        view={this.getAttribute("view") === "important" ? "important" : "all"} />
+        view={this.getAttribute("view") === "important" ? "important" : "all"} simple={this.hasAttribute("simple")} />
     )
   }
 }
